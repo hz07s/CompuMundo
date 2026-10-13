@@ -11,7 +11,7 @@ Sprint 1 «Plataforma, autenticación y catálogo»: T-001 + HU-001 + HU-002. Lo
 
 ## Requisitos
 
-- Node.js 22 (ver `.nvmrc`; mínimo 20.11)
+- Node.js 24 con npm 11 (ver `.nvmrc`). Con Node 22 / npm 10 `npm ci` falla porque los lockfiles están generados con npm 11.
 - Docker Desktop (para PostgreSQL local) o un PostgreSQL 16 propio
 
 ## Arranque rápido
