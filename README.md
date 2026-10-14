@@ -25,6 +25,7 @@ cd backend
 cp .env.example .env        # ajustar si hace falta
 npm install
 npm run migration:run
+npm run seed                # crea el Administrador inicial (ADMIN_USERNAME / ADMIN_PASSWORD)
 npm run start:dev           # http://localhost:3000
 
 # 3. Frontend (otra terminal)
@@ -56,6 +57,7 @@ Comprobaciones:
 | `npm run migration:generate -- src/database/migrations/NombreCambio` | Genera una migración a partir de las entidades |
 | `npm run migration:create -- src/database/migrations/NombreCambio` | Crea una migración vacía |
 | `npm run migration:run` / `npm run migration:revert` | Aplica / revierte la última migración |
+| `npm run seed` | Crea el Administrador inicial si no existe (idempotente) |
 
 ### Frontend (`cd frontend`)
 
@@ -75,6 +77,7 @@ backend/src/
 ├── lectores/      HU-003
 ├── prestamos/     HU-004 / HU-005
 ├── reportes/
+├── usuarios/      entidad Usuario, roles y seed del Administrador (ST-06)
 ├── common/        filtro global de errores, ValidationPipe, DTOs base (paginación)
 ├── config/        validación de variables de entorno (Joi)
 ├── database/      configuración TypeORM, DataSource del CLI y migraciones
@@ -165,7 +168,7 @@ En GitHub: *Settings → Branches → Add rule* para `main` con «Require a pull
    | `CORS_ORIGIN` | URL del frontend en Vercel, p. ej. `https://compumundo-cedis.vercel.app` |
    | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credenciales del Administrador inicial (seed) |
 
-3. `backend/railway.json` ya define: build `npm ci && npm run build`, **migraciones antes de cada despliegue** (`preDeployCommand`), arranque `npm run start:prod` y healthcheck en `/health`.
+3. `backend/railway.json` ya define: build `npm ci && npm run build`, **migraciones y seed antes de cada despliegue** (`preDeployCommand`), arranque `npm run start:prod` y healthcheck en `/health`.
 4. Activar el despliegue automático desde `main` (*Settings → Source*). Con «Wait for CI» activado, Railway solo despliega si el CI pasó.
 
 **Redeploy:** en Railway, *Deployments → ⋯ → Redeploy* sobre el despliegue actual.
