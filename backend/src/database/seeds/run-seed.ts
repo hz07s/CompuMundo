@@ -1,36 +1,37 @@
-import 'dotenv/config';
-import * as bcrypt from 'bcrypt';
-import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AppModule } from '../../app.module';
+import { PasswordService } from '../../auth/password.service';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { seedAdministrador } from '../../usuarios/seed-administrador';
-import { buildDataSourceOptions } from '../typeorm.config';
 
+/** Seed del Administrador inicial. Reutiliza la configuración validada de la app. */
 async function main() {
-  const dataSource = await new DataSource(
-    buildDataSourceOptions(process.env),
-  ).initialize();
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ['error', 'warn'],
+  });
   try {
-    const rounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 10);
+    const config = app.get(ConfigService);
+    const passwords = app.get(PasswordService);
+    const nombreUsuario = config.get<string>('ADMIN_USERNAME');
+
     const resultado = await seedAdministrador(
-      dataSource.getRepository(Usuario),
-      {
-        nombreUsuario: process.env.ADMIN_USERNAME,
-        password: process.env.ADMIN_PASSWORD,
-      },
-      (password) => bcrypt.hash(password, rounds),
+      app.get<Repository<Usuario>>(getRepositoryToken(Usuario)),
+      { nombreUsuario, password: config.get<string>('ADMIN_PASSWORD') },
+      (password) => passwords.hash(password),
     );
     const mensajes = {
-      creado: `Administrador "${process.env.ADMIN_USERNAME}" creado`,
-      existente: `Administrador "${process.env.ADMIN_USERNAME}" ya existía, sin cambios`,
+      creado: `Administrador "${nombreUsuario}" creado`,
+      existente: `Administrador "${nombreUsuario}" ya existía, sin cambios`,
       omitido: 'ADMIN_USERNAME o ADMIN_PASSWORD no definidos, seed omitido',
     };
+    // El logger de Nest está limitado a error/warn para no mostrar el arranque.
     console.log(`[seed] ${mensajes[resultado]}`);
   } finally {
-    await dataSource.destroy();
+    await app.close();
   }
 }
 
-main().catch((error) => {
-  console.error('[seed] Error:', error);
-  process.exit(1);
-});
+void main();
