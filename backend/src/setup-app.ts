@@ -29,6 +29,10 @@ export function setupApp(app: INestApplication): void {
       .addTag('health', 'Estado del servicio')
       .addTag('auth', 'Inicio de sesión, renovación y cierre (HU-001)')
       .addTag('usuarios', 'Personal del sistema (solo Administrador)')
+      .addTag(
+        'obras',
+        'Catálogo: obras y ejemplares (HU-002, solo Bibliotecario)',
+      )
       .build(),
   );
   // UI en /api/docs y especificación descargable en /api/docs-json

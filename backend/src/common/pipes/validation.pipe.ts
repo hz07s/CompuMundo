@@ -4,14 +4,18 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 
-/** Aplana los errores de class-validator a { campo: [mensajes] }. */
+/**
+ * Aplana los errores de class-validator a { campo: [mensajes] }, en el orden
+ * en que están declarados los decoradores (class-validator los da al revés).
+ * Declarando primero el "es obligatorio", el cliente puede mostrar mensajes[0].
+ */
 export function toFieldErrors(
   validationErrors: ValidationError[],
   parent = '',
 ): Record<string, string[]> {
   return validationErrors.reduce<Record<string, string[]>>((acc, err) => {
     const field = parent ? `${parent}.${err.property}` : err.property;
-    if (err.constraints) acc[field] = Object.values(err.constraints);
+    if (err.constraints) acc[field] = Object.values(err.constraints).reverse();
     if (err.children?.length) {
       Object.assign(acc, toFieldErrors(err.children, field));
     }
