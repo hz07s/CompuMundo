@@ -55,13 +55,13 @@ describe('JwtAuthGuard', () => {
     ['sin header', undefined],
     ['esquema distinto de Bearer', 'Basic abc'],
     ['Bearer sin token', 'Bearer'],
-  ])('responde 401 %s', async (_caso, header) => {
+  ])('HU-001 #3: responde 401 %s', async (_caso, header) => {
     await expect(guard.canActivate(contexto(header).context)).rejects.toThrow(
       UnauthorizedException,
     );
   });
 
-  it('responde 401 con un token vencido', async () => {
+  it('HU-001 #3: responde 401 con un token vencido', async () => {
     const token = await jwt.signAsync(
       { sub: 'u-1', nombreUsuario: 'admin', rol: Rol.ADMINISTRADOR },
       { expiresIn: -10 },

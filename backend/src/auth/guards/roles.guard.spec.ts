@@ -43,7 +43,7 @@ describe('RolesGuard', () => {
     ).toBe(true);
   });
 
-  it('un Bibliotecario en una función exclusiva del Administrador recibe 403', () => {
+  it('HU-001 #3: un Bibliotecario en una función exclusiva del Administrador recibe 403', () => {
     expect(() =>
       guard.canActivate(
         contexto(ControllerDePrueba, 'soloAdmin', Rol.BIBLIOTECARIO),
