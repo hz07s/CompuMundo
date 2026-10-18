@@ -3,7 +3,8 @@ import { getHealth } from '../services/healthService'
 
 type ApiState = 'cargando' | 'conectada' | 'sin conexión'
 
-export default function HomePage() {
+/** Indicador del estado de la API (GET /health). */
+export default function EstadoApi() {
   const [apiState, setApiState] = useState<ApiState>('cargando')
 
   useEffect(() => {
@@ -15,12 +16,8 @@ export default function HomePage() {
   }, [])
 
   return (
-    <main className="page">
-      <h1>CompuMundo CEDIS</h1>
-      <p>Sistema de biblioteca</p>
-      <p>
-        API: <strong data-testid="api-state">{apiState}</strong>
-      </p>
-    </main>
+    <p className="estado-api">
+      API: <strong data-testid="api-state">{apiState}</strong>
+    </p>
   )
 }

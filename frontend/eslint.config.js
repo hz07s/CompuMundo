@@ -25,4 +25,9 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Fast Refresh no aplica a pruebas ni a la tabla de rutas.
+    files: ['src/test/**', '**/*.test.{ts,tsx}', 'src/router.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 )
