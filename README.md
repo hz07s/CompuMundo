@@ -182,13 +182,29 @@ En GitHub: *Settings → Branches → Add rule* para `main` con «Require a pull
 
 ## Matriz de permisos (ST-08)
 
-| Módulo | Administrador | Bibliotecario |
-| --- | --- | --- |
-| Usuarios y roles | ✔ | ✘ |
-| Catálogo: alta de obras y ejemplares | ✘ | ✔ |
-| Catálogo: consulta | _por definir_ | ✔ |
-| Lectores | _por definir_ | _por definir_ |
-| Préstamos | _por definir_ | _por definir_ |
-| Reportes | _por definir_ | _por definir_ |
+Toda ruta exige access token salvo las marcadas con `@Public()`. Sin token o con token vencido → **401**; con un rol no permitido → **403**.
 
-Se completa en ST-08 junto con los guards.
+| Módulo / endpoints | Público | Administrador | Bibliotecario |
+| --- | --- | --- | --- |
+| `GET /health`, `/api/docs` | ✔ | ✔ | ✔ |
+| Auth: `POST /auth/login`, `/auth/refresh`, `/auth/logout` | ✔ | ✔ | ✔ |
+| Auth: `GET /auth/me` | ✘ | ✔ | ✔ |
+| Usuarios y roles: `GET /usuarios` | ✘ | ✔ | ✘ |
+| Catálogo: alta y consulta de obras y ejemplares (`/obras`) | ✘ | ✘ | ✔ |
+| Lectores | ✘ | _por definir_ | _por definir_ |
+| Préstamos | ✘ | _por definir_ | _por definir_ |
+| Reportes | ✘ | _por definir_ | _por definir_ |
+
+El catálogo es solo del Bibliotecario según el supuesto de [`docs/decisiones.md`](docs/decisiones.md).
+
+Cómo restringir una ruta:
+
+```ts
+@Roles(Rol.BIBLIOTECARIO)     // en el controller o en un método; el del método tiene prioridad
+@Controller('obras')
+export class ObrasController {}
+
+@Public()                     // ruta sin access token
+@Post('login')
+login() {}
+```

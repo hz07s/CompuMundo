@@ -7,7 +7,6 @@ import {
   Post,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -23,10 +22,10 @@ import type { CookieOptions, Request, Response } from 'express';
 import { REFRESH_COOKIE, REFRESH_COOKIE_PATH } from './auth.constants';
 import { AuthService } from './auth.service';
 import type { SesionEmitida, UsuarioAutenticado } from './auth.types';
+import { Public } from './decorators/public.decorator';
 import { UsuarioActual } from './decorators/usuario-actual.decorator';
 import { LoginDto } from './dto/login.dto';
 import { SesionResponseDto, UsuarioSesionDto } from './dto/sesion-response.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -47,6 +46,7 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -66,6 +66,7 @@ export class AuthController {
     return this.responder(sesion, res);
   }
 
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth(REFRESH_COOKIE)
@@ -86,6 +87,7 @@ export class AuthController {
     return this.responder(sesion, res);
   }
 
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiCookieAuth(REFRESH_COOKIE)
@@ -103,7 +105,6 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Usuario de la sesión actual' })
   @ApiOkResponse({ type: UsuarioSesionDto })

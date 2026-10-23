@@ -1,19 +1,39 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Rol } from '../../usuarios/rol.enum';
+import { Public } from '../decorators/public.decorator';
 import { JwtAuthGuard, RequestAutenticado } from './jwt-auth.guard';
+
+class RutasDePrueba {
+  @Public()
+  publica(this: void) {}
+
+  privada(this: void) {}
+}
 
 describe('JwtAuthGuard', () => {
   const jwt = new JwtService({ secret: 'secreto-de-pruebas' });
-  const guard = new JwtAuthGuard(jwt);
+  const guard = new JwtAuthGuard(jwt, new Reflector());
 
-  const contexto = (authorization?: string) => {
+  const contexto = (
+    authorization?: string,
+    handler: keyof RutasDePrueba = 'privada',
+  ) => {
     const request = { headers: { authorization } } as RequestAutenticado;
     const context = {
       switchToHttp: () => ({ getRequest: () => request }),
+      getHandler: () => RutasDePrueba.prototype[handler],
+      getClass: () => RutasDePrueba,
     } as unknown as ExecutionContext;
     return { request, context };
   };
+
+  it('deja pasar sin token las rutas marcadas con @Public()', async () => {
+    await expect(
+      guard.canActivate(contexto(undefined, 'publica').context),
+    ).resolves.toBe(true);
+  });
 
   it('acepta un token válido y deja el usuario en request.user', async () => {
     const token = await jwt.signAsync({
