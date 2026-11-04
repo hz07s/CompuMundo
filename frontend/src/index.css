@@ -145,3 +145,102 @@ button:disabled {
   border-bottom: 1px solid #e4e7eb;
   text-align: left;
 }
+
+/* Catálogo */
+.catalogo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 900px) {
+  .catalogo {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}
+
+.formulario,
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.5rem;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 6%);
+}
+
+.formulario h2,
+.resultado h2 {
+  margin: 0 0 0.5rem;
+}
+
+.formulario input {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.formulario input[aria-invalid='true'] {
+  border-color: #c81e1e;
+}
+
+.autores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.autores legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+}
+
+.autores > .boton-secundario {
+  align-self: flex-start;
+}
+
+.fila-autor {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.fila > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.resultado {
+  border-left: 4px solid #0e9f6e;
+}
+
+.codigos {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tabla-contenedor {
+  overflow-x: auto;
+}
