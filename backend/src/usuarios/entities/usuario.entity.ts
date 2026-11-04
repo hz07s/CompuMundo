@@ -19,7 +19,7 @@ export class Usuario {
   @Column({ name: 'password_hash', length: 60, select: false })
   passwordHash!: string;
 
-  @Column({ type: 'enum', enum: Rol, enumName: 'usuarios_rol_enum' })
+  @Column({ type: 'enum', enum: Rol })
   rol!: Rol;
 
   /** Baja lógica (RNF-07). */

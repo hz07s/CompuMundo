@@ -1,4 +1,12 @@
 import * as Joi from 'joi';
+import ms, { StringValue } from 'ms';
+
+// Duración en el formato de jsonwebtoken: 8h, 7d, 15m...
+const duracion = Joi.string().custom((value: string, helpers) =>
+  typeof ms(value as StringValue) === 'number'
+    ? value
+    : helpers.error('any.invalid'),
+);
 
 /**
  * Variables de entorno validadas al arrancar. Si falta alguna obligatoria
@@ -16,8 +24,8 @@ export const envValidationSchema = Joi.object({
   DATABASE_SSL: Joi.boolean().default(false),
 
   JWT_SECRET: Joi.string().min(32).required(),
-  JWT_ACCESS_EXPIRES_IN: Joi.string().default('8h'),
-  JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+  JWT_ACCESS_EXPIRES_IN: duracion.default('8h'),
+  JWT_REFRESH_EXPIRES_IN: duracion.default('7d'),
   BCRYPT_SALT_ROUNDS: Joi.number().integer().min(4).max(15).default(10),
 
   // Orígenes permitidos por CORS, separados por coma.
