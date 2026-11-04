@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (build, lint, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: compumundo
+          POSTGRES_PASSWORD: compumundo
+          POSTGRES_DB: compumundo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U compumundo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://compumundo:compumundo@localhost:5432/compumundo_test
+      JWT_SECRET: ci-secret-solo-para-pruebas-0123456789abcdef
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run format:check
+      - run: npm run lint:ci
+      - name: Pruebas unitarias con cobertura (70 % global, 85 % auth)
+        run: npm run test:cov
+      - name: Migraciones
+        run: npm run migration:run:prod
+      - name: Pruebas e2e
+        run: npm run test:e2e
+      - name: Publicar reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend
+          path: backend/coverage
+          if-no-files-found: ignore
+      - name: Resumen de cobertura en el job
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e '
+              const t = require("./coverage/coverage-summary.json").total;
+              const rows = ["lines","branches","functions","statements"]
+                .map(m => `| ${m} | ${t[m].pct} % |`).join("\n");
+              console.log(`### Cobertura backend\n\n| Métrica | % |\n|---|---|\n${rows}`);
+            ' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  frontend:
+    name: Frontend (lint, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_API_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
