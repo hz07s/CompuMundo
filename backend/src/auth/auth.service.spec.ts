@@ -50,7 +50,7 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('con credenciales válidas emite un access token con id y rol', async () => {
+    it('HU-001 #1: con credenciales válidas emite un access token con id y rol', async () => {
       usuarios.findOne.mockResolvedValue(usuario);
       passwords.compare.mockResolvedValue(true);
 
@@ -80,7 +80,7 @@ describe('AuthService', () => {
       expect(dias).toBeCloseTo(7, 1);
     });
 
-    it('con contraseña incorrecta responde 401 genérico', async () => {
+    it('HU-001 #2: con contraseña incorrecta responde 401 genérico', async () => {
       usuarios.findOne.mockResolvedValue(usuario);
       passwords.compare.mockResolvedValue(false);
 
@@ -90,7 +90,7 @@ describe('AuthService', () => {
       expect(refreshTokens.insert).not.toHaveBeenCalled();
     });
 
-    it('con usuario inexistente responde el mismo 401 y aun así compara un hash', async () => {
+    it('HU-001 #2: con usuario inexistente responde el mismo 401 y aun así compara un hash', async () => {
       usuarios.findOne.mockResolvedValue(null);
       passwords.compare.mockResolvedValue(false);
 
