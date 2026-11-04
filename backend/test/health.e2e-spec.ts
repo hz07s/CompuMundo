@@ -1,22 +1,14 @@
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
-import { setupApp } from '../src/setup-app';
+import { createTestApp } from './utils/create-test-app';
 
 // Requiere PostgreSQL en DATABASE_URL (docker compose up -d o el servicio del CI).
 describe('Plataforma (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    setupApp(app);
-    await app.init();
+    ({ app } = await createTestApp());
   });
 
   afterAll(async () => {

@@ -11,7 +11,7 @@ Sprint 1 «Plataforma, autenticación y catálogo»: T-001 + HU-001 + HU-002. Lo
 
 ## Requisitos
 
-- Node.js 22 (ver `.nvmrc`; mínimo 20.11)
+- Node.js 24 con npm 11 (ver `.nvmrc`). Con Node 22 / npm 10 `npm ci` falla porque los lockfiles están generados con npm 11.
 - Docker Desktop (para PostgreSQL local) o un PostgreSQL 16 propio
 
 ## Arranque rápido
@@ -25,6 +25,7 @@ cd backend
 cp .env.example .env        # ajustar si hace falta
 npm install
 npm run migration:run
+npm run seed                # crea el Administrador inicial (ADMIN_USERNAME / ADMIN_PASSWORD)
 npm run start:dev           # http://localhost:3000
 
 # 3. Frontend (otra terminal)
@@ -56,6 +57,7 @@ Comprobaciones:
 | `npm run migration:generate -- src/database/migrations/NombreCambio` | Genera una migración a partir de las entidades |
 | `npm run migration:create -- src/database/migrations/NombreCambio` | Crea una migración vacía |
 | `npm run migration:run` / `npm run migration:revert` | Aplica / revierte la última migración |
+| `npm run seed` | Crea el Administrador inicial si no existe (idempotente) |
 
 ### Frontend (`cd frontend`)
 
@@ -75,6 +77,7 @@ backend/src/
 ├── lectores/      HU-003
 ├── prestamos/     HU-004 / HU-005
 ├── reportes/
+├── usuarios/      entidad Usuario, roles y seed del Administrador (ST-06)
 ├── common/        filtro global de errores, ValidationPipe, DTOs base (paginación)
 ├── config/        validación de variables de entorno (Joi)
 ├── database/      configuración TypeORM, DataSource del CLI y migraciones
@@ -165,7 +168,7 @@ En GitHub: *Settings → Branches → Add rule* para `main` con «Require a pull
    | `CORS_ORIGIN` | URL del frontend en Vercel, p. ej. `https://compumundo-cedis.vercel.app` |
    | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credenciales del Administrador inicial (seed) |
 
-3. `backend/railway.json` ya define: build `npm ci && npm run build`, **migraciones antes de cada despliegue** (`preDeployCommand`), arranque `npm run start:prod` y healthcheck en `/health`.
+3. `backend/railway.json` ya define: build `npm ci && npm run build`, **migraciones y seed antes de cada despliegue** (`preDeployCommand`), arranque `npm run start:prod` y healthcheck en `/health`.
 4. Activar el despliegue automático desde `main` (*Settings → Source*). Con «Wait for CI» activado, Railway solo despliega si el CI pasó.
 
 **Redeploy:** en Railway, *Deployments → ⋯ → Redeploy* sobre el despliegue actual.
@@ -179,13 +182,29 @@ En GitHub: *Settings → Branches → Add rule* para `main` con «Require a pull
 
 ## Matriz de permisos (ST-08)
 
-| Módulo | Administrador | Bibliotecario |
-| --- | --- | --- |
-| Usuarios y roles | ✔ | ✘ |
-| Catálogo: alta de obras y ejemplares | ✘ | ✔ |
-| Catálogo: consulta | _por definir_ | ✔ |
-| Lectores | _por definir_ | _por definir_ |
-| Préstamos | _por definir_ | _por definir_ |
-| Reportes | _por definir_ | _por definir_ |
+Toda ruta exige access token salvo las marcadas con `@Public()`. Sin token o con token vencido → **401**; con un rol no permitido → **403**.
 
-Se completa en ST-08 junto con los guards.
+| Módulo / endpoints | Público | Administrador | Bibliotecario |
+| --- | --- | --- | --- |
+| `GET /health`, `/api/docs` | ✔ | ✔ | ✔ |
+| Auth: `POST /auth/login`, `/auth/refresh`, `/auth/logout` | ✔ | ✔ | ✔ |
+| Auth: `GET /auth/me` | ✘ | ✔ | ✔ |
+| Usuarios y roles: `GET /usuarios` | ✘ | ✔ | ✘ |
+| Catálogo: alta y consulta de obras y ejemplares (`/obras`) | ✘ | ✘ | ✔ |
+| Lectores | ✘ | _por definir_ | _por definir_ |
+| Préstamos | ✘ | _por definir_ | _por definir_ |
+| Reportes | ✘ | _por definir_ | _por definir_ |
+
+El catálogo es solo del Bibliotecario según el supuesto de [`docs/decisiones.md`](docs/decisiones.md).
+
+Cómo restringir una ruta:
+
+```ts
+@Roles(Rol.BIBLIOTECARIO)     // en el controller o en un método; el del método tiene prioridad
+@Controller('obras')
+export class ObrasController {}
+
+@Public()                     // ruta sin access token
+@Post('login')
+login() {}
+```
