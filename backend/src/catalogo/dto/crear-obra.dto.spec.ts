@@ -36,7 +36,7 @@ describe('CrearObraDto', () => {
     ).resolves.toMatchObject({ titulo: 'Cálculo', autores: ['Stewart'] });
   });
 
-  it('indica cada campo faltante y el primer mensaje es "obligatorio"', async () => {
+  it('HU-002 #2: indica cada campo faltante y el primer mensaje es "obligatorio"', async () => {
     const errores = await erroresDe({ cantidad: 1 });
 
     expect(Object.keys(errores).sort()).toEqual([
@@ -53,7 +53,7 @@ describe('CrearObraDto', () => {
     );
   });
 
-  it('un título de solo espacios cuenta como faltante', async () => {
+  it('HU-002 #2: un título de solo espacios cuenta como faltante', async () => {
     const errores = await erroresDe({ ...valido, titulo: '   ' });
 
     expect(errores.titulo[0]).toBe('El título es obligatorio');
@@ -65,12 +65,15 @@ describe('CrearObraDto', () => {
     [1.5, 'La cantidad debe ser un número entero'],
     ['3', 'La cantidad debe ser un número entero'],
     [501, 'La cantidad no puede superar 500 por registro'],
-  ])('rechaza la cantidad %p en el campo cantidad', async (cantidad, msg) => {
-    const errores = await erroresDe({ ...valido, cantidad });
+  ])(
+    'HU-002 #3: rechaza la cantidad %p en el campo cantidad',
+    async (cantidad, msg) => {
+      const errores = await erroresDe({ ...valido, cantidad });
 
-    expect(Object.keys(errores)).toEqual(['cantidad']);
-    expect(errores.cantidad[0]).toBe(msg);
-  });
+      expect(Object.keys(errores)).toEqual(['cantidad']);
+      expect(errores.cantidad[0]).toBe(msg);
+    },
+  );
 
   it.each(['2020-02-30', '15/01/2012', '2012-1-5'])(
     'rechaza la fecha %p',
