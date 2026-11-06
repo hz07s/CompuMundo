@@ -99,8 +99,8 @@ describe('Generador de códigos de ejemplar (e2e, ST-12 / ST-15)', () => {
 
   it('la base de datos rechaza un código de ejemplar repetido (UNIQUE)', async () => {
     const [{ id: obraId }]: Array<{ id: string }> = await dataSource.query(
-      `INSERT INTO obras (titulo, categoria, autores, fecha_publicacion)
-       VALUES ('e2e unique', 'e2e', '{e2e}', '2000-01-01') RETURNING id`,
+      `INSERT INTO obras (titulo, categoria, autores, fecha_publicacion, anio_edicion)
+       VALUES ('e2e unique', 'e2e', '{e2e}', '2000-01-01', 2000) RETURNING id`,
     );
     const codigo = `CEDIS-${ANIO_PRUEBA}-999999`;
     try {

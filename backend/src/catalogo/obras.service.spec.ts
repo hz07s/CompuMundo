@@ -12,6 +12,8 @@ describe('ObrasService', () => {
     categoria: 'Matemáticas',
     autores: ['Stewart'],
     fechaPublicacion: '2012-01-15',
+    volumen: 2,
+    anioEdicion: 2012,
     activo: true,
     creadoEn: new Date('2026-10-01'),
   } as Obra;
@@ -84,9 +86,15 @@ describe('ObrasService', () => {
       categoria: 'Matemáticas',
       autores: ['Stewart'],
       fechaPublicacion: '2012-01-15',
+      anioEdicion: 2012,
+      volumen: 2,
       cantidad: 2,
     });
 
+    expect(manager.create).toHaveBeenCalledWith(
+      Obra,
+      expect.objectContaining({ volumen: 2, anioEdicion: 2012 }),
+    );
     expect(codigos.reservar).toHaveBeenCalledWith(manager, 2);
     expect(manager.insert).toHaveBeenCalledWith(Ejemplar, [
       { obraId: 'o-1', codigo: 'CEDIS-2026-000001' },
@@ -99,6 +107,8 @@ describe('ObrasService', () => {
 
     expect(detalle).toMatchObject({
       id: 'o-1',
+      volumen: 2,
+      anioEdicion: 2012,
       totalEjemplares: 3,
       disponibilidad: 2,
       ejemplares: [

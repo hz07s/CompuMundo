@@ -17,6 +17,7 @@ describe('ObrasController', () => {
       categoria: 'C',
       autores: ['A'],
       fechaPublicacion: '2020-01-01',
+      anioEdicion: 2020,
       cantidad: 1,
     };
     const query = new PaginationQueryDto();

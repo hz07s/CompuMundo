@@ -26,6 +26,14 @@ export class Obra {
   @Column({ name: 'fecha_publicacion', type: 'date' })
   fechaPublicacion!: string;
 
+  /** Volumen de la obra (RF-12); opcional. */
+  @Column({ type: 'int', nullable: true })
+  volumen!: number | null;
+
+  /** Año de edición, 4 dígitos (RF-12). */
+  @Column({ name: 'anio_edicion', type: 'smallint' })
+  anioEdicion!: number;
+
   /** Baja lógica (RNF-07). */
   @Column({ default: true })
   activo!: boolean;
