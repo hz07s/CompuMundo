@@ -9,6 +9,7 @@ import CatalogoPage from './pages/CatalogoPage'
 import LectoresPage from './pages/LectoresPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
+import PrestamosPage from './pages/PrestamosPage'
 
 export const rutas: RouteObject[] = [
   { path: RUTAS.login, element: <LoginPage /> },
@@ -31,6 +32,10 @@ export const rutas: RouteObject[] = [
           {
             element: <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.lectores]} />,
             children: [{ path: RUTAS.lectores, element: <LectoresPage /> }],
+          },
+          {
+            element: <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.prestamos]} />,
+            children: [{ path: RUTAS.prestamos, element: <PrestamosPage /> }],
           },
         ],
       },

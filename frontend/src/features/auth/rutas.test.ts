@@ -8,6 +8,8 @@ describe('rutas por rol', () => {
     expect(puedeEntrar('/catalogo', 'ADMINISTRADOR')).toBe(false)
     expect(puedeEntrar('/lectores', 'BIBLIOTECARIO')).toBe(true)
     expect(puedeEntrar('/lectores', 'ADMINISTRADOR')).toBe(false)
+    expect(puedeEntrar('/prestamos', 'BIBLIOTECARIO')).toBe(true)
+    expect(puedeEntrar('/prestamos', 'ADMINISTRADOR')).toBe(true)
   })
 
   it('tras el login vuelve a la ruta pedida si el rol puede verla', () => {
