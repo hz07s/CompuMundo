@@ -1,4 +1,5 @@
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { Rol } from '../usuarios/rol.enum';
 import { ObrasController } from './obras.controller';
 import { ObrasService } from './obras.service';
 
@@ -20,17 +21,22 @@ describe('ObrasController', () => {
       anioEdicion: 2020,
       cantidad: 1,
     };
+    const usuario = { id: 'u-1', nombreUsuario: 'b', rol: Rol.BIBLIOTECARIO };
     const query = new PaginationQueryDto();
 
-    await expect(controller.crear(dto)).resolves.toBe('creada');
+    await expect(controller.crear(dto, usuario)).resolves.toBe('creada');
     await expect(
-      controller.agregarEjemplares('o-1', { cantidad: 2 }),
+      controller.agregarEjemplares('o-1', { cantidad: 2 }, usuario),
     ).resolves.toBe('agregados');
     await expect(controller.listar(query)).resolves.toBe('lista');
     await expect(controller.detalle('o-1')).resolves.toBe('detalle');
 
-    expect(obras.crear).toHaveBeenCalledWith(dto);
-    expect(obras.agregarEjemplares).toHaveBeenCalledWith('o-1', 2);
+    expect(obras.crear).toHaveBeenCalledWith(dto, usuario);
+    expect(obras.agregarEjemplares).toHaveBeenCalledWith(
+      'o-1',
+      { cantidad: 2 },
+      usuario,
+    );
     expect(obras.listar).toHaveBeenCalledWith(query);
     expect(obras.detalle).toHaveBeenCalledWith('o-1');
   });

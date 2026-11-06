@@ -161,6 +161,68 @@ describe('HU-002 Registro de obras y ejemplares (e2e)', () => {
     });
   });
 
+  describe('DoD-7 / RF-16: usuario responsable', () => {
+    const responsables = async (obraId: string) => {
+      const [obra]: Array<{ creado_por: string; actualizado_por: string }> =
+        await dataSource.query(
+          'SELECT creado_por, actualizado_por FROM obras WHERE id = $1',
+          [obraId],
+        );
+      const ejemplares: Array<{ creado_por: string; actualizado_por: string }> =
+        await dataSource.query(
+          'SELECT creado_por, actualizado_por FROM ejemplares WHERE obra_id = $1',
+          [obraId],
+        );
+      return { obra, ejemplares };
+    };
+    const idBiblio = async () => {
+      const [{ id }]: Array<{ id: string }> = await dataSource.query(
+        'SELECT id FROM usuarios WHERE nombre_usuario = $1',
+        [usuarios.biblio.nombreUsuario],
+      );
+      return id;
+    };
+
+    it('DoD-7: el alta guarda al usuario responsable en la obra y en cada ejemplar', async () => {
+      const res = await crear(valida).expect(201);
+      const { id } = res.body as ObraRespuesta;
+      creadas.push(id);
+      const usuarioId = await idBiblio();
+
+      const { obra, ejemplares } = await responsables(id);
+
+      expect(obra).toEqual({
+        creado_por: usuarioId,
+        actualizado_por: usuarioId,
+      });
+      expect(ejemplares).toHaveLength(3);
+      ejemplares.forEach((e) =>
+        expect(e).toEqual({
+          creado_por: usuarioId,
+          actualizado_por: usuarioId,
+        }),
+      );
+    });
+
+    it('DoD-7: agregar ejemplares guarda al usuario responsable en los nuevos', async () => {
+      const res = await crear({ ...valida, cantidad: 1 }).expect(201);
+      const { id } = res.body as ObraRespuesta;
+      creadas.push(id);
+
+      await request(app.getHttpServer())
+        .post(`/obras/${id}/ejemplares`)
+        .set('Authorization', `Bearer ${tokenBiblio}`)
+        .send({ cantidad: 2 })
+        .expect(201);
+
+      const usuarioId = await idBiblio();
+      const { obra, ejemplares } = await responsables(id);
+      expect(obra.actualizado_por).toBe(usuarioId);
+      expect(ejemplares).toHaveLength(3);
+      expect(ejemplares.every((e) => e.creado_por === usuarioId)).toBe(true);
+    });
+  });
+
   describe('HU-002 #2: falta un campo obligatorio', () => {
     it.each([
       'titulo',
