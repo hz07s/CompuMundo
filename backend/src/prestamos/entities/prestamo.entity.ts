@@ -28,6 +28,18 @@ export const ESTADOS_ACTIVOS: EstadoPrestamo[] = [
   EstadoPrestamo.VENCIDO,
 ];
 
+/** Nombre del índice que garantiza RN-08 en la base de datos. */
+export const INDICE_PRESTAMO_ACTIVO_POR_LECTOR = 'UQ_prestamos_lector_activo';
+
+/**
+ * RN-08: máximo un préstamo Vigente o Vencido por lector. Además de validarse en
+ * el servicio, lo garantiza la base de datos (índice único parcial), de modo que
+ * dos registros simultáneos no puedan dejar a un lector con dos préstamos activos.
+ */
+@Index(INDICE_PRESTAMO_ACTIVO_POR_LECTOR, ['lectorId'], {
+  unique: true,
+  where: `"estado" IN ('VIGENTE', 'VENCIDO')`,
+})
 /** Préstamo de un ejemplar a un lector (HU-004). */
 @Entity('prestamos')
 export class Prestamo extends EntidadAuditada {
