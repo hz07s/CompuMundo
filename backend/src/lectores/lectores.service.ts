@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
@@ -10,6 +11,7 @@ import type { UsuarioAutenticado } from '../auth/auth.types';
 import { enmascararDni } from '../common/utils/dni';
 import { CrearLectorDto } from './dto/crear-lector.dto';
 import { LectorResponseDto } from './dto/lector-response.dto';
+import { LectorVerificacionDto } from './dto/verificar-lector.dto';
 import { esFechaFutura, esMenorDeEdad } from './edad';
 import { Lector } from './entities/lector.entity';
 import { DNI_VALIDATOR } from './validacion/dni-validator.interface';
@@ -77,6 +79,42 @@ export class LectoresService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Pantalla de verificación presencial del préstamo (HU-007 #2, #3): el único
+   * contexto que devuelve el DNI del lector completo. El del apoderado va enmascarado.
+   */
+  async verificar(
+    dni: string,
+    hoy: Date = new Date(),
+  ): Promise<LectorVerificacionDto> {
+    if (!(await this.dniValidator.validar(dni))) {
+      throw new BadRequestException({
+        error: 'Bad Request',
+        message: 'Datos inválidos',
+        errors: { dni: [MENSAJE_FORMATO_DNI] },
+      });
+    }
+    const lector = await this.lectores.findOneBy({ dni, activo: true });
+    if (!lector) {
+      throw new NotFoundException(
+        'El lector no está registrado. Debe registrarlo primero',
+      );
+    }
+    return {
+      id: lector.id,
+      dni: lector.dni,
+      nombres: lector.nombres,
+      apellidos: lector.apellidos,
+      categoria: lector.categoria,
+      esMenor: esMenorDeEdad(lector.fechaNacimiento, hoy),
+      apoderadoNombre: lector.apoderadoNombre,
+      apoderadoDni: lector.apoderadoDni
+        ? enmascararDni(lector.apoderadoDni)
+        : null,
+      activo: lector.activo,
+    };
   }
 
   private async validar(
