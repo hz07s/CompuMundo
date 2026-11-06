@@ -12,6 +12,8 @@ export interface ObraResumen {
   categoria: string
   autores: string[]
   fechaPublicacion: string
+  volumen: number | null
+  anioEdicion: number
   totalEjemplares: number
   disponibilidad: number
   creadoEn: string
@@ -34,5 +36,7 @@ export interface NuevaObra {
   categoria: string
   autores: string[]
   fechaPublicacion: string
+  volumen?: number
+  anioEdicion: number
   cantidad: number
 }

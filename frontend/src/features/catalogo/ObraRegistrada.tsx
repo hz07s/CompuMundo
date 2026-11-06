@@ -10,6 +10,10 @@ export default function ObraRegistrada({ obra }: { obra: ObraDetalle }) {
         <strong data-testid="disponibilidad">{obra.disponibilidad}</strong> de{' '}
         {obra.totalEjemplares}
       </p>
+      <p>
+        Edición {obra.anioEdicion}
+        {obra.volumen !== null && ` · Volumen ${obra.volumen}`}
+      </p>
       <p>Códigos generados:</p>
       <ul className="codigos">
         {obra.ejemplares.map((e) => (
