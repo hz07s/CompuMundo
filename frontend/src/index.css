@@ -186,8 +186,40 @@ button:disabled {
   box-sizing: border-box;
 }
 
+.formulario select {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.formulario select[aria-invalid='true'],
 .formulario input[aria-invalid='true'] {
   border-color: #c81e1e;
+}
+
+.apoderado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 8px;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.formulario .casilla input {
+  width: auto;
 }
 
 .autores {
