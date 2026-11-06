@@ -9,6 +9,7 @@ const THRESHOLDS = {
   'src/catalogo': 70,
   'src/usuarios': 70,
   'src/lectores': 70,
+  'src/lectores/validacion': 85,
   'src/prestamos': 85,
 };
 const METRICS = ['lines', 'branches', 'functions', 'statements'];
