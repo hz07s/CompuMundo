@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { enmascararDnisEnTexto } from '../utils/dni';
 
 export interface ErrorResponse {
   statusCode: number;
@@ -52,9 +53,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         if (errors) body.errors = errors;
       }
     } else {
+      // RNF-02: ningún DNI completo se escribe en los logs (URL, mensaje de BD, stack).
       this.logger.error(
-        `${request.method} ${request.url}`,
-        exception instanceof Error ? exception.stack : String(exception),
+        enmascararDnisEnTexto(`${request.method} ${request.url}`),
+        enmascararDnisEnTexto(
+          exception instanceof Error
+            ? (exception.stack ?? exception.message)
+            : String(exception),
+        ),
       );
     }
 

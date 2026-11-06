@@ -60,4 +60,27 @@ describe('HttpExceptionFilter', () => {
       expect.objectContaining({ message: 'Error interno del servidor' }),
     );
   });
+
+  it('HU-007 #7: ningún DNI completo llega a los logs (URL ni error de base de datos)', () => {
+    const { json } = mockHost();
+    const host = {
+      switchToHttp: () => ({
+        getResponse: () => ({ status: () => ({ json }) }),
+        getRequest: () => ({ url: '/lectores?dni=45678912', method: 'GET' }),
+      }),
+    } as unknown as ArgumentsHost;
+    const error = jest
+      .spyOn(filter['logger'], 'error')
+      .mockImplementation(() => undefined);
+
+    filter.catch(
+      new Error('Key (dni)=(45678912) already exists, apoderado 87654321'),
+      host,
+    );
+
+    const escrito = JSON.stringify(error.mock.calls);
+    expect(escrito).not.toMatch(/45678912|87654321/);
+    expect(escrito).toContain('****8912');
+    expect(escrito).toContain('****4321');
+  });
 });
