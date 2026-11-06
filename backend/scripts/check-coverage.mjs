@@ -6,6 +6,10 @@ import { relative, resolve, sep } from 'node:path';
 
 const THRESHOLDS = {
   'src/auth': 85,
+  'src/catalogo': 70,
+  'src/usuarios': 70,
+  'src/lectores': 70,
+  'src/prestamos': 85,
 };
 const METRICS = ['lines', 'branches', 'functions', 'statements'];
 
