@@ -26,11 +26,20 @@ export class ReglasPrestamoService {
     lectorId: string,
     manager?: EntityManager,
   ): Promise<void> {
+    if (await this.tienePrestamoActivo(lectorId, manager)) {
+      throw new ConflictException(MENSAJE_PRESTAMO_ACTIVO);
+    }
+  }
+
+  /** ¿Tiene el lector un préstamo Vigente o Vencido? */
+  tienePrestamoActivo(
+    lectorId: string,
+    manager?: EntityManager,
+  ): Promise<boolean> {
     const repo = manager ? manager.getRepository(Prestamo) : this.prestamos;
-    const tieneActivo = await repo.exists({
+    return repo.exists({
       where: ESTADOS_ACTIVOS.map((estado) => ({ lectorId, estado })),
     });
-    if (tieneActivo) throw new ConflictException(MENSAJE_PRESTAMO_ACTIVO);
   }
 
   /**

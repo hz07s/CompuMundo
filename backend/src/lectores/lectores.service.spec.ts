@@ -1,11 +1,25 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { QueryFailedError, Repository } from 'typeorm';
+import { MorosidadService } from '../prestamos/morosidad.service';
+import { ReglasPrestamoService } from '../prestamos/reglas-prestamo.service';
 import { Rol } from '../usuarios/rol.enum';
 import { CrearLectorDto } from './dto/crear-lector.dto';
 import { CategoriaLector, Lector } from './entities/lector.entity';
 import { LectoresService } from './lectores.service';
 import { IDniValidator } from './validacion/dni-validator.interface';
 import { FormatoDniValidator } from './validacion/formato-dni.validator';
+
+/** Colaboradores de préstamos que LectoresService solo consulta en la verificación. */
+const morosidad = {
+  evaluar: jest.fn().mockResolvedValue({
+    estado: 'LIBRE',
+    devolucionesTardias: 0,
+    mensaje: null,
+  }),
+} as unknown as MorosidadService;
+const reglasPrestamo = {
+  tienePrestamoActivo: jest.fn().mockResolvedValue(false),
+} as unknown as ReglasPrestamoService;
 
 describe('LectoresService', () => {
   const hoy = new Date('2026-11-05T12:00:00Z');
@@ -62,6 +76,8 @@ describe('LectoresService', () => {
     service = new LectoresService(
       repo as unknown as Repository<Lector>,
       validator,
+      morosidad,
+      reglasPrestamo,
     );
   });
 
@@ -133,7 +149,12 @@ describe('LectoresService', () => {
   it('HU-003 #4: valida el DNI exclusivamente mediante IDniValidator', async () => {
     const validar = jest.fn().mockResolvedValue(false);
     const falso: IDniValidator = { validar };
-    service = new LectoresService(repo as unknown as Repository<Lector>, falso);
+    service = new LectoresService(
+      repo as unknown as Repository<Lector>,
+      falso,
+      morosidad,
+      reglasPrestamo,
+    );
 
     const errores = await errorDe(mayor);
 

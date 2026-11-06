@@ -1,6 +1,8 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { ROLES_KEY } from '../auth/decorators/roles.decorator';
+import { MorosidadService } from '../prestamos/morosidad.service';
+import { ReglasPrestamoService } from '../prestamos/reglas-prestamo.service';
 import { Rol } from '../usuarios/rol.enum';
 import { CategoriaLector, Lector } from './entities/lector.entity';
 import { LectoresController } from './lectores.controller';
@@ -22,13 +24,23 @@ describe('Verificación presencial del lector (HU-007)', () => {
   } as Lector;
 
   let repo: { findOneBy: jest.Mock };
+  let evaluar: jest.Mock;
+  let tienePrestamoActivo: jest.Mock;
   let service: LectoresService;
 
   beforeEach(() => {
     repo = { findOneBy: jest.fn().mockResolvedValue(lector) };
+    evaluar = jest.fn().mockResolvedValue({
+      estado: 'LIBRE',
+      devolucionesTardias: 0,
+      mensaje: null,
+    });
+    tienePrestamoActivo = jest.fn().mockResolvedValue(false);
     service = new LectoresService(
       repo as unknown as Repository<Lector>,
       new FormatoDniValidator(),
+      { evaluar } as unknown as MorosidadService,
+      { tienePrestamoActivo } as unknown as ReglasPrestamoService,
     );
   });
 
@@ -49,6 +61,24 @@ describe('Verificación presencial del lector (HU-007)', () => {
 
     expect(resultado.apoderadoDni).toBe('****4321');
     expect(JSON.stringify(resultado)).not.toContain('87654321');
+  });
+
+  it('HU-004: informa el estado de morosidad (RN-02) y si tiene un préstamo activo (RN-08)', async () => {
+    evaluar.mockResolvedValue({
+      estado: 'ADVERTENCIA',
+      devolucionesTardias: 1,
+      mensaje: 'advertencia',
+    });
+    tienePrestamoActivo.mockResolvedValue(true);
+
+    const resultado = await service.verificar('45678912', hoy);
+
+    expect(evaluar).toHaveBeenCalledWith('l-1');
+    expect(tienePrestamoActivo).toHaveBeenCalledWith('l-1');
+    expect(resultado).toMatchObject({
+      tienePrestamoActivo: true,
+      morosidad: { estado: 'ADVERTENCIA', devolucionesTardias: 1 },
+    });
   });
 
   it('un lector mayor no tiene apoderado', async () => {
