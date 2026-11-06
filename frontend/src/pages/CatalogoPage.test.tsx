@@ -14,6 +14,8 @@ const obraCreada: ObraDetalle = {
   categoria: 'Matemáticas',
   autores: ['James Stewart'],
   fechaPublicacion: '2012-01-15',
+  volumen: 2,
+  anioEdicion: 2012,
   totalEjemplares: 3,
   disponibilidad: 3,
   creadoEn: '2026-10-22T00:00:00Z',
@@ -49,6 +51,8 @@ describe('CatalogoPage (HU-002)', () => {
       categoria: string
       autor: string
       fecha: string
+      volumen: string
+      anio: string
       cantidad: string
     }>,
   ) {
@@ -66,6 +70,15 @@ describe('CatalogoPage (HU-002)', () => {
         datos.fecha,
       )
     }
+    if (datos.volumen) {
+      await user.type(
+        screen.getByLabelText('Volumen (opcional)'),
+        datos.volumen,
+      )
+    }
+    if (datos.anio) {
+      await user.type(screen.getByLabelText('Año de edición'), datos.anio)
+    }
     if (datos.cantidad !== undefined) {
       const cantidad = screen.getByLabelText('Cantidad de ejemplares')
       await user.clear(cantidad)
@@ -79,6 +92,7 @@ describe('CatalogoPage (HU-002)', () => {
     categoria: 'Matemáticas',
     autor: 'James Stewart',
     fecha: '2012-01-15',
+    anio: '2012',
     cantidad: '3',
   }
 
@@ -104,6 +118,7 @@ describe('CatalogoPage (HU-002)', () => {
       categoria: 'Matemáticas',
       autores: ['James Stewart'],
       fechaPublicacion: '2012-01-15',
+      anioEdicion: 2012,
       cantidad: 3,
     })
     // El listado se recarga para incluir la obra nueva.
@@ -121,12 +136,45 @@ describe('CatalogoPage (HU-002)', () => {
     expect(
       screen.getByText('La fecha de publicación es obligatoria'),
     ).toBeInTheDocument()
+    expect(
+      screen.getByText('El año de edición es obligatorio'),
+    ).toBeInTheDocument()
     expect(screen.getByLabelText('Título')).toHaveAttribute(
       'aria-invalid',
       'true',
     )
     expect(obrasApi.crear).not.toHaveBeenCalled()
   })
+
+  it('HU-002 RF-12: envía el volumen cuando se indica y muestra la edición', async () => {
+    vi.mocked(obrasApi.crear).mockResolvedValue(obraCreada)
+    render(<CatalogoPage />)
+
+    await llenar({ ...completa, volumen: '2' })
+
+    const resultado = await screen.findByRole('status', {
+      name: 'Obra registrada',
+    })
+    expect(resultado).toHaveTextContent('Edición 2012 · Volumen 2')
+    expect(obrasApi.crear).toHaveBeenCalledWith(
+      expect.objectContaining({ volumen: 2, anioEdicion: 2012 }),
+    )
+  })
+
+  it.each([
+    ['volumen', { volumen: '0' }, 'El volumen debe ser mayor o igual que 1'],
+    ['anio', { anio: '99' }, 'El año de edición debe tener 4 dígitos'],
+  ])(
+    'HU-002 RF-12: %s inválido se rechaza en su campo y no se envía',
+    async (_campo, cambio, mensaje) => {
+      render(<CatalogoPage />)
+
+      await llenar({ ...completa, anio: '', ...cambio })
+
+      expect(screen.getByText(mensaje)).toBeInTheDocument()
+      expect(obrasApi.crear).not.toHaveBeenCalled()
+    },
+  )
 
   it.each([
     ['0', 'La cantidad debe ser mayor que 0'],

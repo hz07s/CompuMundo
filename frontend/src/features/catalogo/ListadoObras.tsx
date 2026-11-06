@@ -50,6 +50,7 @@ export default function ListadoObras({ version }: { version: number }) {
                   <th>Autores</th>
                   <th>Categoría</th>
                   <th>Publicación</th>
+                  <th>Edición</th>
                   <th>Disponibles</th>
                 </tr>
               </thead>
@@ -60,6 +61,10 @@ export default function ListadoObras({ version }: { version: number }) {
                     <td>{o.autores.join(', ')}</td>
                     <td>{o.categoria}</td>
                     <td>{o.fechaPublicacion}</td>
+                    <td>
+                      {o.anioEdicion}
+                      {o.volumen !== null && ` · Vol. ${o.volumen}`}
+                    </td>
                     <td>
                       {o.disponibilidad} / {o.totalEjemplares}
                     </td>

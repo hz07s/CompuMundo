@@ -4,6 +4,7 @@ import { obrasApi } from './obrasApi'
 import type { ObraDetalle } from './types'
 import {
   MAX_EJEMPLARES,
+  MAX_VOLUMEN,
   validarObra,
   type ErroresObra,
   type FormularioObra,
@@ -14,6 +15,8 @@ const VACIO: FormularioObra = {
   categoria: '',
   autores: [''],
   fechaPublicacion: '',
+  volumen: '',
+  anioEdicion: '',
   cantidad: '1',
 }
 
@@ -56,6 +59,8 @@ export default function RegistroObraForm({ onRegistrada }: Props) {
         categoria: form.categoria.trim(),
         autores: form.autores.map((a) => a.trim()).filter(Boolean),
         fechaPublicacion: form.fechaPublicacion,
+        ...(form.volumen.trim() && { volumen: Number(form.volumen) }),
+        anioEdicion: Number(form.anioEdicion),
         cantidad: Number(form.cantidad),
       })
       setForm(VACIO)
@@ -149,6 +154,37 @@ export default function RegistroObraForm({ onRegistrada }: Props) {
         </button>
       </fieldset>
       {error('autores')}
+
+      <div className="fila">
+        <div>
+          <label htmlFor="volumen">Volumen (opcional)</label>
+          <input
+            {...props('volumen')}
+            type="number"
+            min={1}
+            max={MAX_VOLUMEN}
+            step={1}
+            inputMode="numeric"
+            value={form.volumen}
+            onChange={(e) => cambiar('volumen', e.target.value)}
+          />
+          {error('volumen')}
+        </div>
+        <div>
+          <label htmlFor="anioEdicion">Año de edición</label>
+          <input
+            {...props('anioEdicion')}
+            type="number"
+            min={1000}
+            max={9999}
+            step={1}
+            inputMode="numeric"
+            value={form.anioEdicion}
+            onChange={(e) => cambiar('anioEdicion', e.target.value)}
+          />
+          {error('anioEdicion')}
+        </div>
+      </div>
 
       <div className="fila">
         <div>
