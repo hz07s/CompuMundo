@@ -29,6 +29,12 @@ export class ObraResumenDto {
   @ApiProperty({ example: '2012-01-15', format: 'date' })
   fechaPublicacion!: string;
 
+  @ApiProperty({ example: 2, nullable: true, type: Number })
+  volumen!: number | null;
+
+  @ApiProperty({ example: 2012 })
+  anioEdicion!: number;
+
   @ApiProperty({ example: 3, description: 'Ejemplares activos' })
   totalEjemplares!: number;
 

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
@@ -6,6 +6,7 @@ import {
   IsInt,
   IsISO8601,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   Max,
@@ -15,6 +16,9 @@ import {
 import { Trim } from '../../common/decorators/trim.decorator';
 
 export const MAX_EJEMPLARES_POR_ALTA = 500;
+export const MAX_VOLUMEN = 9999;
+export const ANIO_EDICION_MIN = 1000;
+export const ANIO_EDICION_MAX = 9999;
 
 /** Cantidad de ejemplares: entero positivo (HU-002 #3). */
 export class CantidadEjemplaresDto {
@@ -67,4 +71,26 @@ export class CrearObraDto extends CantidadEjemplaresDto {
     { message: 'La fecha de publicación no es una fecha válida' },
   )
   fechaPublicacion!: string;
+
+  @ApiPropertyOptional({ example: 2, minimum: 1, description: 'Volumen' })
+  @IsOptional()
+  @IsInt({ message: 'El volumen debe ser un número entero' })
+  @Min(1, { message: 'El volumen debe ser mayor o igual que 1' })
+  @Max(MAX_VOLUMEN, { message: `El volumen no puede superar ${MAX_VOLUMEN}` })
+  volumen?: number;
+
+  @ApiProperty({
+    example: 2012,
+    minimum: ANIO_EDICION_MIN,
+    maximum: ANIO_EDICION_MAX,
+  })
+  @IsNotEmpty({ message: 'El año de edición es obligatorio' })
+  @IsInt({ message: 'El año de edición debe ser un número entero' })
+  @Min(ANIO_EDICION_MIN, {
+    message: 'El año de edición debe tener 4 dígitos',
+  })
+  @Max(ANIO_EDICION_MAX, {
+    message: 'El año de edición debe tener 4 dígitos',
+  })
+  anioEdicion!: number;
 }

@@ -7,6 +7,8 @@ import { accessTokenDe, usuariosDePrueba } from './utils/usuarios-de-prueba';
 
 interface ObraRespuesta {
   id: string;
+  volumen: number | null;
+  anioEdicion: number;
   totalEjemplares: number;
   disponibilidad: number;
   ejemplares: Array<{ codigo: string; estado: string }>;
@@ -30,6 +32,7 @@ describe('HU-002 Registro de obras y ejemplares (e2e)', () => {
     categoria: 'Matemáticas',
     autores: ['James Stewart'],
     fechaPublicacion: '2012-01-15',
+    anioEdicion: 2012,
     cantidad: 3,
   };
 
@@ -121,8 +124,51 @@ describe('HU-002 Registro de obras y ejemplares (e2e)', () => {
     });
   });
 
+  describe('HU-002 RF-12: volumen y año de edición', () => {
+    it('HU-002 RF-12: guarda y devuelve volumen y año de edición', async () => {
+      const res = await crear({ ...valida, volumen: 2 }).expect(201);
+      const obra = res.body as ObraRespuesta;
+      creadas.push(obra.id);
+
+      expect(obra).toMatchObject({ volumen: 2, anioEdicion: 2012 });
+      const detalle = await request(app.getHttpServer())
+        .get(`/obras/${obra.id}`)
+        .set('Authorization', `Bearer ${tokenBiblio}`)
+        .expect(200);
+      expect(detalle.body).toMatchObject({ volumen: 2, anioEdicion: 2012 });
+    });
+
+    it('HU-002 RF-12: el volumen es opcional y queda en null', async () => {
+      const res = await crear(valida).expect(201);
+      const obra = res.body as ObraRespuesta;
+      creadas.push(obra.id);
+
+      expect(obra.volumen).toBeNull();
+    });
+
+    it.each([
+      ['volumen', 0],
+      ['anioEdicion', 99],
+    ])('HU-002 RF-12: %s = %p se rechaza con 400', async (campo, valor) => {
+      const antes = await contarObras();
+
+      const res = await crear({ ...valida, [campo]: valor }).expect(400);
+
+      expect(Object.keys((res.body as { errors: object }).errors)).toEqual([
+        campo,
+      ]);
+      expect(await contarObras()).toBe(antes);
+    });
+  });
+
   describe('HU-002 #2: falta un campo obligatorio', () => {
-    it.each(['titulo', 'categoria', 'autores', 'fechaPublicacion'] as const)(
+    it.each([
+      'titulo',
+      'categoria',
+      'autores',
+      'fechaPublicacion',
+      'anioEdicion',
+    ] as const)(
       'HU-002 #2: sin %s responde 400 indicándolo y no registra nada',
       async (campo) => {
         const antes = await contarObras();
@@ -143,7 +189,13 @@ describe('HU-002 Registro de obras y ejemplares (e2e)', () => {
 
       expect(
         Object.keys((res.body as { errors: object }).errors).sort(),
-      ).toEqual(['autores', 'categoria', 'fechaPublicacion', 'titulo']);
+      ).toEqual([
+        'anioEdicion',
+        'autores',
+        'categoria',
+        'fechaPublicacion',
+        'titulo',
+      ]);
     });
   });
 

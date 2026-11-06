@@ -30,9 +30,16 @@ export class ObrasService {
   /** HU-002 #1: crea la obra y sus N ejemplares en una sola transacción. */
   async crear(dto: CrearObraDto): Promise<ObraDetalleDto> {
     const id = await this.dataSource.transaction(async (manager) => {
-      const { titulo, categoria, autores, fechaPublicacion } = dto;
+      const { titulo, categoria, autores, fechaPublicacion, anioEdicion } = dto;
       const obra = await manager.save(
-        manager.create(Obra, { titulo, categoria, autores, fechaPublicacion }),
+        manager.create(Obra, {
+          titulo,
+          categoria,
+          autores,
+          fechaPublicacion,
+          volumen: dto.volumen ?? null,
+          anioEdicion,
+        }),
       );
       await this.crearEjemplares(manager, obra.id, dto.cantidad);
       return obra.id;
@@ -140,6 +147,8 @@ export class ObrasService {
       categoria: obra.categoria,
       autores: obra.autores,
       fechaPublicacion: obra.fechaPublicacion,
+      volumen: obra.volumen,
+      anioEdicion: obra.anioEdicion,
       totalEjemplares: conteo?.total ?? 0,
       disponibilidad: conteo?.disponibles ?? 0,
       creadoEn: obra.creadoEn,

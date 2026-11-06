@@ -9,6 +9,7 @@ describe('CrearObraDto', () => {
     categoria: 'Matemáticas',
     autores: ['James Stewart'],
     fechaPublicacion: '2012-01-15',
+    anioEdicion: 2012,
     cantidad: 3,
   };
 
@@ -40,6 +41,7 @@ describe('CrearObraDto', () => {
     const errores = await erroresDe({ cantidad: 1 });
 
     expect(Object.keys(errores).sort()).toEqual([
+      'anioEdicion',
       'autores',
       'categoria',
       'fechaPublicacion',
@@ -51,6 +53,44 @@ describe('CrearObraDto', () => {
     expect(errores.fechaPublicacion[0]).toBe(
       'La fecha de publicación es obligatoria',
     );
+    expect(errores.anioEdicion[0]).toBe('El año de edición es obligatorio');
+  });
+
+  it('HU-002 RF-12: el volumen es opcional y el año de edición se acepta', async () => {
+    await expect(
+      pipe.transform(valido, { type: 'body', metatype: CrearObraDto }),
+    ).resolves.toMatchObject({ anioEdicion: 2012 });
+    await expect(
+      pipe.transform(
+        { ...valido, volumen: 3 },
+        { type: 'body', metatype: CrearObraDto },
+      ),
+    ).resolves.toMatchObject({ volumen: 3 });
+  });
+
+  it.each([
+    [0, 'El volumen debe ser mayor o igual que 1'],
+    [-1, 'El volumen debe ser mayor o igual que 1'],
+    [1.5, 'El volumen debe ser un número entero'],
+    ['2', 'El volumen debe ser un número entero'],
+    [10000, 'El volumen no puede superar 9999'],
+  ])('HU-002 RF-12: rechaza el volumen %p', async (volumen, msg) => {
+    const errores = await erroresDe({ ...valido, volumen });
+
+    expect(Object.keys(errores)).toEqual(['volumen']);
+    expect(errores.volumen[0]).toBe(msg);
+  });
+
+  it.each([
+    [999, 'El año de edición debe tener 4 dígitos'],
+    [10000, 'El año de edición debe tener 4 dígitos'],
+    [2012.5, 'El año de edición debe ser un número entero'],
+    ['2012', 'El año de edición debe ser un número entero'],
+  ])('HU-002 RF-12: rechaza el año de edición %p', async (anioEdicion, msg) => {
+    const errores = await erroresDe({ ...valido, anioEdicion });
+
+    expect(Object.keys(errores)).toEqual(['anioEdicion']);
+    expect(errores.anioEdicion[0]).toBe(msg);
   });
 
   it('HU-002 #2: un título de solo espacios cuenta como faltante', async () => {
