@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { Trim } from '../../common/decorators/trim.decorator';
+import { EstadoMorosidad } from '../../prestamos/morosidad.service';
 import { CategoriaLector } from '../entities/lector.entity';
 
 /** DNI a verificar. Viaja en el cuerpo, no en la URL, para que no quede en logs de acceso. */
@@ -11,6 +12,18 @@ export class VerificarLectorDto {
   @IsString({ message: 'El DNI debe ser texto' })
   @MaxLength(20, { message: 'El DNI no tiene un formato válido' })
   dni!: string;
+}
+
+/** Estado de RN-02 para el lector (advertencia o bloqueo por devoluciones tardías). */
+export class MorosidadDto {
+  @ApiProperty({ enum: EstadoMorosidad, enumName: 'EstadoMorosidad' })
+  estado!: EstadoMorosidad;
+
+  @ApiProperty({ example: 1, description: 'Devoluciones tardías consecutivas' })
+  devolucionesTardias!: number;
+
+  @ApiProperty({ nullable: true, type: String })
+  mensaje!: string | null;
 }
 
 /**
@@ -52,4 +65,10 @@ export class LectorVerificacionDto {
 
   @ApiProperty()
   activo!: boolean;
+
+  @ApiProperty({ description: 'Tiene un préstamo Vigente o Vencido (RN-08)' })
+  tienePrestamoActivo!: boolean;
+
+  @ApiProperty({ type: MorosidadDto })
+  morosidad!: MorosidadDto;
 }

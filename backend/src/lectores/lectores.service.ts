@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import type { UsuarioAutenticado } from '../auth/auth.types';
 import { enmascararDni } from '../common/utils/dni';
+import { MorosidadService } from '../prestamos/morosidad.service';
+import { ReglasPrestamoService } from '../prestamos/reglas-prestamo.service';
 import { CrearLectorDto } from './dto/crear-lector.dto';
 import { LectorResponseDto } from './dto/lector-response.dto';
 import { LectorVerificacionDto } from './dto/verificar-lector.dto';
@@ -28,6 +30,8 @@ export class LectoresService {
     @InjectRepository(Lector) private readonly lectores: Repository<Lector>,
     // Solo la interfaz: la validación puede reemplazarse sin tocar el servicio (RNF-11).
     @Inject(DNI_VALIDATOR) private readonly dniValidator: IDniValidator,
+    private readonly morosidad: MorosidadService,
+    private readonly reglasPrestamo: ReglasPrestamoService,
   ) {}
 
   /** HU-003: alta de lector con validación de DNI y reglas de menores (RN-03, RN-09). */
@@ -102,6 +106,10 @@ export class LectoresService {
         'El lector no está registrado. Debe registrarlo primero',
       );
     }
+    const [morosidad, tienePrestamoActivo] = await Promise.all([
+      this.morosidad.evaluar(lector.id),
+      this.reglasPrestamo.tienePrestamoActivo(lector.id),
+    ]);
     return {
       id: lector.id,
       dni: lector.dni,
@@ -114,6 +122,8 @@ export class LectoresService {
         ? enmascararDni(lector.apoderadoDni)
         : null,
       activo: lector.activo,
+      tienePrestamoActivo,
+      morosidad,
     };
   }
 

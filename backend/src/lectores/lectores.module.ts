@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PrestamosModule } from '../prestamos/prestamos.module';
 import { Lector } from './entities/lector.entity';
 import { LectoresController } from './lectores.controller';
 import { LectoresService } from './lectores.service';
@@ -8,7 +9,7 @@ import { FormatoDniValidator } from './validacion/formato-dni.validator';
 
 /** Lectores: estudiantes, docentes y administrativos (HU-003) */
 @Module({
-  imports: [TypeOrmModule.forFeature([Lector])],
+  imports: [TypeOrmModule.forFeature([Lector]), PrestamosModule],
   controllers: [LectoresController],
   providers: [
     LectoresService,
