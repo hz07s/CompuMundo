@@ -5,6 +5,7 @@ export const RUTAS = {
   accesoDenegado: '/acceso-denegado',
   usuarios: '/admin/usuarios',
   catalogo: '/catalogo',
+  lectores: '/lectores',
 } as const
 
 /** Módulo al que llega cada rol después de iniciar sesión (HU-001 #1). */
@@ -17,6 +18,7 @@ export const INICIO_POR_ROL: Record<Rol, string> = {
 export const ROLES_POR_RUTA: Record<string, Rol[]> = {
   [RUTAS.usuarios]: ['ADMINISTRADOR'],
   [RUTAS.catalogo]: ['BIBLIOTECARIO'],
+  [RUTAS.lectores]: ['BIBLIOTECARIO'],
 }
 
 export function puedeEntrar(pathname: string, rol: Rol): boolean {

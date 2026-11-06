@@ -30,6 +30,9 @@ export default function AppLayout() {
           {usuario.rol === 'BIBLIOTECARIO' && (
             <NavLink to={RUTAS.catalogo}>Catálogo</NavLink>
           )}
+          {usuario.rol === 'BIBLIOTECARIO' && (
+            <NavLink to={RUTAS.lectores}>Lectores</NavLink>
+          )}
         </nav>
         <span className="usuario-actual">
           {usuario.nombreUsuario} · {NOMBRE_ROL[usuario.rol]}
