@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { Rol } from '../usuarios/rol.enum';
 import { Ejemplar, EstadoEjemplar } from './entities/ejemplar.entity';
 import { Obra } from './entities/obra.entity';
 import { ObrasService } from './obras.service';
@@ -18,11 +19,18 @@ describe('ObrasService', () => {
     creadoEn: new Date('2026-10-01'),
   } as Obra;
 
+  const usuario = {
+    id: 'u-1',
+    nombreUsuario: 'biblio',
+    rol: Rol.BIBLIOTECARIO,
+  };
+
   let manager: {
     create: jest.Mock;
     save: jest.Mock;
     insert: jest.Mock;
     existsBy: jest.Mock;
+    update: jest.Mock;
   };
   let obras: { findOneBy: jest.Mock; findAndCount: jest.Mock };
   let ejemplares: { find: jest.Mock; createQueryBuilder: jest.Mock };
@@ -38,6 +46,7 @@ describe('ObrasService', () => {
       ),
       insert: jest.fn(),
       existsBy: jest.fn().mockResolvedValue(true),
+      update: jest.fn(),
     };
     const dataSource = {
       transaction: jest.fn((fn: (m: EntityManager) => Promise<unknown>) =>
@@ -81,24 +90,42 @@ describe('ObrasService', () => {
   });
 
   it('crea la obra y un ejemplar por código reservado en la misma transacción', async () => {
-    await service.crear({
-      titulo: 'Cálculo',
-      categoria: 'Matemáticas',
-      autores: ['Stewart'],
-      fechaPublicacion: '2012-01-15',
-      anioEdicion: 2012,
-      volumen: 2,
-      cantidad: 2,
-    });
+    await service.crear(
+      {
+        titulo: 'Cálculo',
+        categoria: 'Matemáticas',
+        autores: ['Stewart'],
+        fechaPublicacion: '2012-01-15',
+        anioEdicion: 2012,
+        volumen: 2,
+        cantidad: 2,
+      },
+      usuario,
+    );
 
     expect(manager.create).toHaveBeenCalledWith(
       Obra,
-      expect.objectContaining({ volumen: 2, anioEdicion: 2012 }),
+      expect.objectContaining({
+        volumen: 2,
+        anioEdicion: 2012,
+        creadoPor: 'u-1',
+        actualizadoPor: 'u-1',
+      }),
     );
     expect(codigos.reservar).toHaveBeenCalledWith(manager, 2);
     expect(manager.insert).toHaveBeenCalledWith(Ejemplar, [
-      { obraId: 'o-1', codigo: 'CEDIS-2026-000001' },
-      { obraId: 'o-1', codigo: 'CEDIS-2026-000002' },
+      {
+        obraId: 'o-1',
+        codigo: 'CEDIS-2026-000001',
+        creadoPor: 'u-1',
+        actualizadoPor: 'u-1',
+      },
+      {
+        obraId: 'o-1',
+        codigo: 'CEDIS-2026-000002',
+        creadoPor: 'u-1',
+        actualizadoPor: 'u-1',
+      },
     ]);
   });
 
@@ -137,16 +164,23 @@ describe('ObrasService', () => {
   it('agregar ejemplares a una obra inexistente responde 404 y no reserva códigos', async () => {
     manager.existsBy.mockResolvedValue(false);
 
-    await expect(service.agregarEjemplares('x', 2)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.agregarEjemplares('x', { cantidad: 2 }, usuario),
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(codigos.reservar).not.toHaveBeenCalled();
   });
 
   it('agrega ejemplares a una obra existente', async () => {
-    await service.agregarEjemplares('o-1', 2);
+    await service.agregarEjemplares('o-1', { cantidad: 2 }, usuario);
 
     expect(codigos.reservar).toHaveBeenCalledWith(manager, 2);
+    expect(manager.insert).toHaveBeenCalledWith(Ejemplar, [
+      expect.objectContaining({ creadoPor: 'u-1', actualizadoPor: 'u-1' }),
+      expect.objectContaining({ creadoPor: 'u-1', actualizadoPor: 'u-1' }),
+    ]);
+    expect(manager.update).toHaveBeenCalledWith(Obra, 'o-1', {
+      actualizadoPor: 'u-1',
+    });
   });
 
   it('lista paginado con conteos por obra', async () => {

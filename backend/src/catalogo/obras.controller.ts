@@ -17,6 +17,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { UsuarioAutenticado } from '../auth/auth.types';
+import { UsuarioActual } from '../auth/decorators/usuario-actual.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { Rol } from '../usuarios/rol.enum';
@@ -43,8 +45,11 @@ export class ObrasController {
     description:
       'Campos faltantes o inválidos, agrupados por campo en `errors`',
   })
-  crear(@Body() dto: CrearObraDto): Promise<ObraDetalleDto> {
-    return this.obras.crear(dto);
+  crear(
+    @Body() dto: CrearObraDto,
+    @UsuarioActual() usuario: UsuarioAutenticado,
+  ): Promise<ObraDetalleDto> {
+    return this.obras.crear(dto, usuario);
   }
 
   @Post(':id/ejemplares')
@@ -55,8 +60,9 @@ export class ObrasController {
   agregarEjemplares(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CantidadEjemplaresDto,
+    @UsuarioActual() usuario: UsuarioAutenticado,
   ): Promise<ObraDetalleDto> {
-    return this.obras.agregarEjemplares(id, dto.cantidad);
+    return this.obras.agregarEjemplares(id, dto, usuario);
   }
 
   @Get()

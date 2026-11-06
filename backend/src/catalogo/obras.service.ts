@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import type { UsuarioAutenticado } from '../auth/auth.types';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CodigoEjemplarService } from './codigo-ejemplar.service';
-import { CrearObraDto } from './dto/crear-obra.dto';
+import { CantidadEjemplaresDto, CrearObraDto } from './dto/crear-obra.dto';
 import {
   ObraDetalleDto,
   ObraResumenDto,
@@ -28,7 +29,10 @@ export class ObrasService {
   ) {}
 
   /** HU-002 #1: crea la obra y sus N ejemplares en una sola transacción. */
-  async crear(dto: CrearObraDto): Promise<ObraDetalleDto> {
+  async crear(
+    dto: CrearObraDto,
+    usuario: UsuarioAutenticado,
+  ): Promise<ObraDetalleDto> {
     const id = await this.dataSource.transaction(async (manager) => {
       const { titulo, categoria, autores, fechaPublicacion, anioEdicion } = dto;
       const obra = await manager.save(
@@ -39,9 +43,11 @@ export class ObrasService {
           fechaPublicacion,
           volumen: dto.volumen ?? null,
           anioEdicion,
+          creadoPor: usuario.id,
+          actualizadoPor: usuario.id,
         }),
       );
-      await this.crearEjemplares(manager, obra.id, dto.cantidad);
+      await this.crearEjemplares(manager, obra.id, dto.cantidad, usuario.id);
       return obra.id;
     });
     return this.detalle(id);
@@ -50,12 +56,14 @@ export class ObrasService {
   /** Agrega ejemplares a una obra existente y activa. */
   async agregarEjemplares(
     obraId: string,
-    cantidad: number,
+    { cantidad }: CantidadEjemplaresDto,
+    usuario: UsuarioAutenticado,
   ): Promise<ObraDetalleDto> {
     await this.dataSource.transaction(async (manager) => {
       const existe = await manager.existsBy(Obra, { id: obraId, activo: true });
       if (!existe) throw new NotFoundException('Obra no encontrada');
-      await this.crearEjemplares(manager, obraId, cantidad);
+      await this.crearEjemplares(manager, obraId, cantidad, usuario.id);
+      await manager.update(Obra, obraId, { actualizadoPor: usuario.id });
     });
     return this.detalle(obraId);
   }
@@ -105,11 +113,17 @@ export class ObrasService {
     manager: EntityManager,
     obraId: string,
     cantidad: number,
+    usuarioId: string,
   ): Promise<void> {
     const codigos = await this.codigos.reservar(manager, cantidad);
     await manager.insert(
       Ejemplar,
-      codigos.map((codigo) => ({ obraId, codigo })),
+      codigos.map((codigo) => ({
+        obraId,
+        codigo,
+        creadoPor: usuarioId,
+        actualizadoPor: usuarioId,
+      })),
     );
   }
 

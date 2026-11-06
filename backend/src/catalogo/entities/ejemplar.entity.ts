@@ -1,3 +1,4 @@
+import { EntidadAuditada } from '../../common/entities/auditoria.entity';
 import {
   Column,
   CreateDateColumn,
@@ -17,7 +18,7 @@ export enum EstadoEjemplar {
 
 /** Copia física de una obra; es lo que se presta y devuelve (HU-004, HU-005). */
 @Entity('ejemplares')
-export class Ejemplar {
+export class Ejemplar extends EntidadAuditada {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

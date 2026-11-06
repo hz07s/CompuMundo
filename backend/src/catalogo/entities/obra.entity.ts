@@ -1,3 +1,4 @@
+import { EntidadAuditada } from '../../common/entities/auditoria.entity';
 import {
   Column,
   CreateDateColumn,
@@ -10,7 +11,7 @@ import { Ejemplar } from './ejemplar.entity';
 
 /** Documento bibliográfico (P-18). Sus copias físicas son los ejemplares. */
 @Entity('obras')
-export class Obra {
+export class Obra extends EntidadAuditada {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
