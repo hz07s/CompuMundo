@@ -34,4 +34,8 @@ export const envValidationSchema = Joi.object({
   // Administrador inicial que crea el seed (ST-06).
   ADMIN_USERNAME: Joi.string().optional(),
   ADMIN_PASSWORD: Joi.string().min(8).optional(),
+
+  // Google OAuth (HU-022)
+  GOOGLE_CLIENT_ID: Joi.string().optional(),
+  ADMIN_GOOGLE_EMAIL: Joi.string().email().optional(),
 });

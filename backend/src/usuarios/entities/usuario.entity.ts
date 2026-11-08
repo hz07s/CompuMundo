@@ -16,8 +16,32 @@ export class Usuario {
   nombreUsuario!: string;
 
   /** Solo el hash Bcrypt. No se selecciona por defecto para que nunca salga en respuestas. */
-  @Column({ name: 'password_hash', length: 60, select: false })
-  passwordHash!: string;
+  @Column({
+    type: 'varchar',
+    name: 'password_hash',
+    length: 60,
+    nullable: true,
+    select: false,
+  })
+  passwordHash!: string | null;
+
+  @Column({
+    type: 'varchar',
+    name: 'email',
+    length: 120,
+    unique: true,
+    nullable: true,
+  })
+  email!: string | null;
+
+  @Column({
+    type: 'varchar',
+    name: 'google_id',
+    length: 100,
+    unique: true,
+    nullable: true,
+  })
+  googleId!: string | null;
 
   @Column({ type: 'enum', enum: Rol })
   rol!: Rol;

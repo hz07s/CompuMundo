@@ -7,11 +7,12 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { GoogleAuthService } from './google-auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PasswordService } from './password.service';
 
-/** Autenticación JWT, refresh tokens y RBAC (HU-001) */
+/** Autenticación JWT, refresh tokens y RBAC (HU-001, HU-022) */
 @Module({
   imports: [
     UsuariosModule,
@@ -27,10 +28,11 @@ import { PasswordService } from './password.service';
   providers: [
     AuthService,
     PasswordService,
+    GoogleAuthService,
     // Guards globales, en este orden: primero autenticación (401), luego rol (403).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [PasswordService],
+  exports: [PasswordService, GoogleAuthService],
 })
 export class AuthModule {}

@@ -14,7 +14,12 @@ describe('AuthController', () => {
     refreshToken: 'refresh-claro',
     refreshExpiraEn: new Date('2030-01-01'),
   };
-  let auth: { login: jest.Mock; refresh: jest.Mock; logout: jest.Mock };
+  let auth: {
+    login: jest.Mock;
+    loginConGoogle: jest.Mock;
+    refresh: jest.Mock;
+    logout: jest.Mock;
+  };
   let res: { cookie: jest.Mock; clearCookie: jest.Mock };
 
   const crear = (NODE_ENV = 'development') =>
@@ -26,6 +31,7 @@ describe('AuthController', () => {
   beforeEach(() => {
     auth = {
       login: jest.fn().mockResolvedValue(sesion),
+      loginConGoogle: jest.fn().mockResolvedValue(sesion),
       refresh: jest.fn().mockResolvedValue(sesion),
       logout: jest.fn(),
     };
@@ -52,6 +58,25 @@ describe('AuthController', () => {
         sameSite: 'lax',
         path: '/auth',
       }),
+    );
+  });
+
+  it('loginGoogle procesa la credencial de Google y emite sesión con cookie', async () => {
+    const body = await crear().loginGoogle(
+      { credential: 'google-token-xyz' },
+      res as unknown as Response,
+    );
+
+    expect(auth.loginConGoogle).toHaveBeenCalledWith('google-token-xyz');
+    expect(body).toEqual({
+      accessToken: 'access',
+      expiresIn: 28800,
+      usuario: sesion.usuario,
+    });
+    expect(res.cookie).toHaveBeenCalledWith(
+      REFRESH_COOKIE,
+      'refresh-claro',
+      expect.objectContaining({ httpOnly: true }),
     );
   });
 

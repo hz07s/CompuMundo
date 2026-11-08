@@ -8,6 +8,7 @@ import { CREDENCIALES_INVALIDAS } from './auth.constants';
 import { AuthService } from './auth.service';
 import { JwtPayload } from './auth.types';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { GoogleAuthService } from './google-auth.service';
 import { PasswordService } from './password.service';
 
 describe('AuthService', () => {
@@ -20,32 +21,39 @@ describe('AuthService', () => {
     passwordHash: 'hash',
   } as Usuario;
 
-  let usuarios: { findOne: jest.Mock };
+  let usuarios: { findOne: jest.Mock; update: jest.Mock };
   let refreshTokens: {
     findOne: jest.Mock;
     insert: jest.Mock;
     update: jest.Mock;
   };
   let passwords: { compare: jest.Mock };
+  let googleAuth: { verificarToken: jest.Mock };
   let service: AuthService;
 
   beforeEach(() => {
-    usuarios = { findOne: jest.fn() };
+    usuarios = {
+      findOne: jest.fn(),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
     refreshTokens = {
       findOne: jest.fn(),
       insert: jest.fn(),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     passwords = { compare: jest.fn() };
+    googleAuth = { verificarToken: jest.fn() };
+    const config = new ConfigService({
+      JWT_ACCESS_EXPIRES_IN: '8h',
+      JWT_REFRESH_EXPIRES_IN: '7d',
+    });
     service = new AuthService(
       usuarios as unknown as Repository<Usuario>,
       refreshTokens as unknown as Repository<RefreshToken>,
       passwords as unknown as PasswordService,
       jwt,
-      new ConfigService({
-        JWT_ACCESS_EXPIRES_IN: '8h',
-        JWT_REFRESH_EXPIRES_IN: '7d',
-      }),
+      googleAuth as unknown as GoogleAuthService,
+      config,
     );
   });
 
@@ -110,6 +118,78 @@ describe('AuthService', () => {
       await expect(service.login('biblio', 'clave')).rejects.toThrow(
         new UnauthorizedException(CREDENCIALES_INVALIDAS),
       );
+    });
+  });
+
+  describe('loginConGoogle', () => {
+    it('HU-022: con token válido y usuario existente emite sesión', async () => {
+      googleAuth.verificarToken.mockResolvedValue({
+        googleId: 'g-123',
+        email: 'biblio@cedis.edu.pe',
+      });
+      usuarios.findOne.mockResolvedValue({
+        ...usuario,
+        googleId: 'g-123',
+        email: 'biblio@cedis.edu.pe',
+      });
+
+      const sesion = await service.loginConGoogle('google-jwt');
+
+      expect(sesion.usuario).toEqual({
+        id: 'u-1',
+        nombreUsuario: 'biblio',
+        rol: Rol.BIBLIOTECARIO,
+      });
+      expect(refreshTokens.insert).toHaveBeenCalled();
+    });
+
+    it('vincula googleId y email si el usuario existía previamente sin ellos', async () => {
+      googleAuth.verificarToken.mockResolvedValue({
+        googleId: 'g-999',
+        email: 'biblio@cedis.edu.pe',
+      });
+      usuarios.findOne.mockResolvedValue({
+        ...usuario,
+        googleId: null,
+        email: null,
+      });
+
+      await service.loginConGoogle('google-jwt');
+
+      expect(usuarios.update).toHaveBeenCalledWith('u-1', {
+        googleId: 'g-999',
+        email: 'biblio@cedis.edu.pe',
+      });
+    });
+
+    it('rechaza con 401 si el usuario de Google no está registrado en el sistema', async () => {
+      googleAuth.verificarToken.mockResolvedValue({
+        googleId: 'g-desconocido',
+        email: 'noexiste@gmail.com',
+      });
+      usuarios.findOne.mockResolvedValue(null);
+
+      await expect(service.loginConGoogle('google-jwt')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(refreshTokens.insert).not.toHaveBeenCalled();
+    });
+
+    it('rechaza con 401 si el usuario encontrado está inactivo', async () => {
+      googleAuth.verificarToken.mockResolvedValue({
+        googleId: 'g-123',
+        email: 'inactivo@cedis.edu.pe',
+      });
+      usuarios.findOne.mockResolvedValue({
+        ...usuario,
+        activo: false,
+        googleId: 'g-123',
+      });
+
+      await expect(service.loginConGoogle('google-jwt')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(refreshTokens.insert).not.toHaveBeenCalled();
     });
   });
 

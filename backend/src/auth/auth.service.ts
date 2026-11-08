@@ -5,10 +5,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomBytes } from 'crypto';
 import ms, { StringValue } from 'ms';
 import { IsNull, Repository } from 'typeorm';
+import {
+  CREDENCIALES_INVALIDAS,
+  SESION_INVALIDA,
+  USUARIO_GOOGLE_NO_REGISTRADO,
+} from './auth.constants';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { CREDENCIALES_INVALIDAS, SESION_INVALIDA } from './auth.constants';
 import { JwtPayload, SesionEmitida } from './auth.types';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { GoogleAuthService } from './google-auth.service';
 import { PasswordService } from './password.service';
 
 // Hash Bcrypt de una clave cualquiera: se compara contra él cuando el usuario
@@ -27,7 +32,8 @@ export class AuthService {
     private readonly refreshTokens: Repository<RefreshToken>,
     private readonly passwords: PasswordService,
     private readonly jwt: JwtService,
-    config: ConfigService,
+    private readonly googleAuth: GoogleAuthService,
+    private readonly config: ConfigService,
   ) {
     this.accessTtl = config.get<StringValue>('JWT_ACCESS_EXPIRES_IN', '8h');
     this.refreshTtlMs = ms(
@@ -55,6 +61,61 @@ export class AuthService {
     if (!usuario || !valida || !usuario.activo) {
       throw new UnauthorizedException(CREDENCIALES_INVALIDAS);
     }
+    return this.emitirSesion(usuario);
+  }
+
+  /** HU-022: Autenticación con Google Identity Services */
+  async loginConGoogle(credential: string): Promise<SesionEmitida> {
+    const { googleId, email } =
+      await this.googleAuth.verificarToken(credential);
+
+    let usuario = await this.usuarios.findOne({
+      where: [{ googleId }, { email }, { nombreUsuario: email }],
+      select: {
+        id: true,
+        nombreUsuario: true,
+        rol: true,
+        activo: true,
+        email: true,
+        googleId: true,
+      },
+    });
+
+    const adminGoogleEmail = this.config
+      .get<string>('ADMIN_GOOGLE_EMAIL')
+      ?.toLowerCase();
+
+    if (!usuario && adminGoogleEmail && adminGoogleEmail === email) {
+      usuario = await this.usuarios.findOne({
+        where: { nombreUsuario: 'admin' },
+        select: {
+          id: true,
+          nombreUsuario: true,
+          rol: true,
+          activo: true,
+          email: true,
+          googleId: true,
+        },
+      });
+    }
+
+    if (!usuario) {
+      throw new UnauthorizedException(USUARIO_GOOGLE_NO_REGISTRADO);
+    }
+
+    if (!usuario.activo) {
+      throw new UnauthorizedException(CREDENCIALES_INVALIDAS);
+    }
+
+    if (!usuario.googleId || !usuario.email) {
+      await this.usuarios.update(usuario.id, {
+        googleId: usuario.googleId ?? googleId,
+        email: usuario.email ?? email,
+      });
+      usuario.googleId = usuario.googleId ?? googleId;
+      usuario.email = usuario.email ?? email;
+    }
+
     return this.emitirSesion(usuario);
   }
 

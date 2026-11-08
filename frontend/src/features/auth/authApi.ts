@@ -19,6 +19,13 @@ export const authApi = {
     return data
   },
 
+  async loginGoogle(credential: string) {
+    const { data } = await authHttp.post<SesionResponse>('/auth/google', {
+      credential,
+    })
+    return data
+  },
+
   async refresh() {
     const { data } = await authHttp.post<SesionResponse>('/auth/refresh')
     return data

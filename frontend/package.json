@@ -14,6 +14,7 @@
     "format:check": "prettier --check src"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "axios": "^1.20.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
