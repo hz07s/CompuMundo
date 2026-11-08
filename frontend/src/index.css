@@ -98,6 +98,32 @@ button:disabled {
   font: inherit;
 }
 
+.separador-login {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.75rem 0;
+  color: #616e7c;
+  font-size: 0.85rem;
+}
+
+.separador-login::before,
+.separador-login::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e4e7eb;
+}
+
+.separador-login span {
+  padding: 0 0.5rem;
+}
+
+.google-login-contenedor {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
 .tarjeta input[aria-invalid='true'] {
   border-color: #c81e1e;
 }

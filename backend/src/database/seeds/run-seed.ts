@@ -19,7 +19,11 @@ async function main() {
 
     const resultado = await seedAdministrador(
       app.get<Repository<Usuario>>(getRepositoryToken(Usuario)),
-      { nombreUsuario, password: config.get<string>('ADMIN_PASSWORD') },
+      {
+        nombreUsuario,
+        password: config.get<string>('ADMIN_PASSWORD'),
+        email: config.get<string>('ADMIN_GOOGLE_EMAIL'),
+      },
       (password) => passwords.hash(password),
     );
     const mensajes = {

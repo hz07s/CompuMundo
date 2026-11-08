@@ -24,6 +24,7 @@ import { AuthService } from './auth.service';
 import type { SesionEmitida, UsuarioAutenticado } from './auth.types';
 import { Public } from './decorators/public.decorator';
 import { UsuarioActual } from './decorators/usuario-actual.decorator';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { SesionResponseDto, UsuarioSesionDto } from './dto/sesion-response.dto';
 
@@ -63,6 +64,27 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<SesionResponseDto> {
     const sesion = await this.auth.login(dto.nombreUsuario, dto.password);
+    return this.responder(sesion, res);
+  }
+
+  @Public()
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Iniciar sesión con Google (HU-022)',
+    description:
+      'Valida el ID token emitido por Google Identity Services, emite el access token y deja el refresh token en una cookie httpOnly.',
+  })
+  @ApiOkResponse({ type: SesionResponseDto })
+  @ApiUnauthorizedResponse({
+    description:
+      'Token de Google inválido, cuenta no vinculada o usuario inactivo',
+  })
+  async loginGoogle(
+    @Body() dto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SesionResponseDto> {
+    const sesion = await this.auth.loginConGoogle(dto.credential);
     return this.responder(sesion, res);
   }
 

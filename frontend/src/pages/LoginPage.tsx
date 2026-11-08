@@ -5,6 +5,7 @@ import {
   useNavigate,
   type Location,
 } from 'react-router-dom'
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import EstadoApi from '../components/EstadoApi'
 import { destinoTrasLogin, INICIO_POR_ROL } from '../features/auth/rutas'
 import { useAuth } from '../features/auth/useAuth'
@@ -17,7 +18,7 @@ interface Errores {
 }
 
 export default function LoginPage() {
-  const { sesion, login } = useAuth()
+  const { sesion, login, loginConGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const desde = (location.state as { desde?: Location } | null)?.desde
@@ -57,6 +58,30 @@ export default function LoginPage() {
     } finally {
       setEnviando(false)
     }
+  }
+
+  async function onGoogleSuccess(response: CredentialResponse) {
+    if (!response.credential) {
+      setErrores({ general: 'No se recibió la credencial de Google' })
+      return
+    }
+    setEnviando(true)
+    setErrores({})
+    try {
+      const usuario = await loginConGoogle(response.credential)
+      navigate(destinoTrasLogin(usuario.rol, desde?.pathname), {
+        replace: true,
+      })
+    } catch (error) {
+      const { mensaje, campos } = normalizarError(error)
+      setErrores({ ...campos, general: mensaje })
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  function onGoogleError() {
+    setErrores({ general: 'Error al comunicarse con Google' })
   }
 
   return (
@@ -104,6 +129,20 @@ export default function LoginPage() {
         <button type="submit" className="boton-primario" disabled={enviando}>
           {enviando ? 'Ingresando…' : 'Ingresar'}
         </button>
+
+        <div className="separador-login" aria-hidden="true">
+          <span>o</span>
+        </div>
+
+        <div className="google-login-contenedor">
+          <GoogleLogin
+            onSuccess={onGoogleSuccess}
+            onError={onGoogleError}
+            text="signin_with"
+            shape="rectangular"
+          />
+        </div>
+
         <EstadoApi />
       </form>
     </main>

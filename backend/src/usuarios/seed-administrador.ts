@@ -10,19 +10,27 @@ export type ResultadoSeed = 'creado' | 'existente' | 'omitido';
  */
 export async function seedAdministrador(
   repo: Repository<Usuario>,
-  credenciales: { nombreUsuario?: string; password?: string },
+  credenciales: { nombreUsuario?: string; password?: string; email?: string },
   hashPassword: (password: string) => Promise<string>,
 ): Promise<ResultadoSeed> {
-  const { nombreUsuario, password } = credenciales;
+  const { nombreUsuario, password, email } = credenciales;
   if (!nombreUsuario || !password) return 'omitido';
 
   const existente = await repo.findOneBy({ nombreUsuario });
-  if (existente) return 'existente';
+  if (existente) {
+    if (email && !existente.email) {
+      await repo.update(existente.id, { email });
+    }
+    return 'existente';
+  }
 
-  await repo.insert({
+  const datos: Partial<Usuario> = {
     nombreUsuario,
     passwordHash: await hashPassword(password),
     rol: Rol.ADMINISTRADOR,
-  });
+  };
+  if (email) datos.email = email;
+
+  await repo.insert(datos);
   return 'creado';
 }

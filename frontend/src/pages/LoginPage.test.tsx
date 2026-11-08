@@ -99,4 +99,41 @@ describe('LoginPage', () => {
 
     await waitFor(() => expect(rutaActual()).toBe('/catalogo'))
   })
+
+  it('HU-022: login exitoso con Google autentica y redirige según rol', async () => {
+    vi.mocked(authApi.loginGoogle).mockResolvedValue(sesion('BIBLIOTECARIO'))
+    const { rutaActual } = renderConRutas('/login')
+
+    const user = userEvent.setup()
+    await user.click(screen.getByTestId('google-login-btn'))
+
+    await waitFor(() => expect(rutaActual()).toBe('/catalogo'))
+    expect(authApi.loginGoogle).toHaveBeenCalledWith('google-test-credential')
+    expect(sesionStore.accessToken()).toBe('token')
+  })
+
+  it('HU-022: muestra error si la autenticación con Google falla en el backend', async () => {
+    vi.mocked(authApi.loginGoogle).mockRejectedValue(
+      new AxiosError('401', 'ERR_BAD_REQUEST', undefined, undefined, {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+        data: {
+          statusCode: 401,
+          message:
+            'No existe una cuenta del personal asociada a este correo de Google',
+        },
+      }),
+    )
+    renderConRutas('/login')
+
+    const user = userEvent.setup()
+    await user.click(screen.getByTestId('google-login-btn'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No existe una cuenta del personal asociada a este correo de Google',
+    )
+    expect(sesionStore.get().estado).toBe('anonimo')
+  })
 })
