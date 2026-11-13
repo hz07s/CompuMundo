@@ -5,6 +5,7 @@ import {
   useNavigate,
   type Location,
 } from 'react-router-dom'
+import { GoogleLogin } from '@react-oauth/google'
 import EstadoApi from '../components/EstadoApi'
 import { destinoTrasLogin, INICIO_POR_ROL } from '../features/auth/rutas'
 import { useAuth } from '../features/auth/useAuth'
@@ -17,7 +18,8 @@ interface Errores {
 }
 
 export default function LoginPage() {
-  const { sesion, login } = useAuth()
+  // Asegúrate de extraer la nueva función loginGoogle de tu hook
+  const { sesion, login, loginGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const desde = (location.state as { desde?: Location } | null)?.desde
@@ -54,6 +56,25 @@ export default function LoginPage() {
       const { mensaje, campos } = normalizarError(error)
       setErrores({ ...campos, general: mensaje })
       setPassword('')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  // NUEVA FUNCIÓN: Maneja la respuesta exitosa de Google
+  async function onGoogleSuccess(credentialResponse: any) {
+    if (!credentialResponse.credential) return;
+    
+    setEnviando(true)
+    try {
+      // Llama a tu backend con el token de Google
+      const usuario = await loginGoogle(credentialResponse.credential)
+      navigate(destinoTrasLogin(usuario.rol, desde?.pathname), {
+        replace: true,
+      })
+    } catch (error) {
+      const { mensaje } = normalizarError(error)
+      setErrores({ general: mensaje })
     } finally {
       setEnviando(false)
     }
@@ -104,6 +125,16 @@ export default function LoginPage() {
         <button type="submit" className="boton-primario" disabled={enviando}>
           {enviando ? 'Ingresando…' : 'Ingresar'}
         </button>
+
+        {/* CONTENEDOR DEL BOTÓN DE GOOGLE */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', marginBottom: '1rem' }}>
+          <GoogleLogin
+            onSuccess={onGoogleSuccess}
+            onError={() => setErrores({ general: 'Error al conectar con Google' })}
+            useOneTap
+          />
+        </div>
+
         <EstadoApi />
       </form>
     </main>

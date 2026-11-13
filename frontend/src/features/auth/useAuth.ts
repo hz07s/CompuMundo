@@ -12,6 +12,13 @@ export function useAuth() {
     return respuesta.usuario
   }, [])
 
+  // NUEVA FUNCIÓN: Login con credencial de Google
+  const loginGoogle = useCallback(async (credential: string) => {
+    const respuesta = await authApi.loginGoogle(credential)
+    sesionStore.iniciar(respuesta)
+    return respuesta.usuario
+  }, [])
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout()
@@ -21,5 +28,6 @@ export function useAuth() {
     }
   }, [])
 
-  return { sesion, login, logout }
+  // Agregamos loginGoogle al valor de retorno
+  return { sesion, login, loginGoogle, logout }
 }

@@ -10,6 +10,11 @@ export class UsuariosService {
     @InjectRepository(Usuario) private readonly usuarios: Repository<Usuario>,
   ) {}
 
+  /** Busca un usuario por su correo institucional validando que esté activo */
+  async findByEmail(email: string): Promise<Usuario | null> {
+    return this.usuarios.findOne({ where: { email, activo: true } });
+  }
+
   /** Lista el personal sin exponer nunca el hash de contraseña. */
   async listar(): Promise<UsuarioResponseDto[]> {
     const usuarios = await this.usuarios.find({

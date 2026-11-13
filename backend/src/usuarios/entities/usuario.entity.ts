@@ -15,6 +15,10 @@ export class Usuario {
   @Column({ name: 'nombre_usuario', length: 50, unique: true })
   nombreUsuario!: string;
 
+  // NUEVA COLUMNA PARA GOOGLE
+  @Column({ unique: true, nullable: true })
+  email!: string;
+
   /** Solo el hash Bcrypt. No se selecciona por defecto para que nunca salga en respuestas. */
   @Column({ name: 'password_hash', length: 60, select: false })
   passwordHash!: string;

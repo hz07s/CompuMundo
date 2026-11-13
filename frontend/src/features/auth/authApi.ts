@@ -19,6 +19,14 @@ export const authApi = {
     return data
   },
 
+  // NUEVA FUNCIÓN: Envía el token de Google a NestJS
+  async loginGoogle(credential: string) {
+    const { data } = await authHttp.post<SesionResponse>('/auth/google', {
+      credential,
+    })
+    return data
+  },
+
   async refresh() {
     const { data } = await authHttp.post<SesionResponse>('/auth/refresh')
     return data

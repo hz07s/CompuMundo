@@ -66,6 +66,28 @@ export class AuthController {
     return this.responder(sesion, res);
   }
 
+  // NUEVO ENDPOINT PARA GOOGLE
+  @Public()
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Iniciar sesión con Google',
+    description:
+      'Verifica el token de Google, valida el dominio institucional y emite la misma sesión (JWT + Cookie) que el login estándar.',
+  })
+  @ApiOkResponse({ type: SesionResponseDto })
+  @ApiUnauthorizedResponse({
+    description: 'Token inválido, dominio incorrecto o usuario no registrado',
+  })
+  async loginGoogle(
+    @Body('credential') credential: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SesionResponseDto> {
+    const sesion = await this.auth.loginGoogle(credential);
+    // ¡Reutilizamos tu método responder para manejar la cookie y el DTO!
+    return this.responder(sesion, res);
+  }
+
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)

@@ -10,6 +10,7 @@ import { CREDENCIALES_INVALIDAS, SESION_INVALIDA } from './auth.constants';
 import { JwtPayload, SesionEmitida } from './auth.types';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { PasswordService } from './password.service';
+import { OAuth2Client } from 'google-auth-library'; // <-- NUEVO
 
 // Hash Bcrypt de una clave cualquiera: se compara contra él cuando el usuario
 // no existe para que el tiempo de respuesta no revele si existe o no.
@@ -20,6 +21,9 @@ const HASH_SENUELO =
 export class AuthService {
   private readonly accessTtl: StringValue;
   private readonly refreshTtlMs: number;
+  private readonly googleClient: OAuth2Client; // <-- NUEVO
+  private readonly googleClientId: string; // <-- NUEVO
+  private readonly googleAllowedDomain: string; // <-- NUEVO
 
   constructor(
     @InjectRepository(Usuario) private readonly usuarios: Repository<Usuario>,
@@ -29,10 +33,15 @@ export class AuthService {
     private readonly jwt: JwtService,
     config: ConfigService,
   ) {
-    this.accessTtl = config.get<StringValue>('JWT_ACCESS_EXPIRES_IN', '8h');
+    this.accessTtl = config.get<StringValue>('JWT_ACCESS_EXPIRES_IN', '8h') as StringValue;
     this.refreshTtlMs = ms(
-      config.get<StringValue>('JWT_REFRESH_EXPIRES_IN', '7d'),
+      config.get<StringValue>('JWT_REFRESH_EXPIRES_IN', '7d') as StringValue,
     );
+    
+    // <-- NUEVO: Configuración de Google Auth usando tu ConfigService
+    this.googleClientId = config.get<string>('GOOGLE_CLIENT_ID', '');
+    this.googleAllowedDomain = config.get<string>('GOOGLE_ALLOWED_DOMAIN', 'unsa.edu.pe');
+    this.googleClient = new OAuth2Client(this.googleClientId);
   }
 
   /** HU-001 #1 y #2: credenciales válidas emiten sesión; cualquier fallo es un 401 genérico. */
@@ -58,6 +67,53 @@ export class AuthService {
     return this.emitirSesion(usuario);
   }
 
+  /** NUEVO: Login exclusivo para correos institucionales validando con Google */
+  async loginGoogle(credential: string): Promise<SesionEmitida> {
+    console.log('--- 1. INICIANDO LOGIN CON GOOGLE ---');
+    try {
+      console.log('--- 2. VERIFICANDO TOKEN CON GOOGLE ---');
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: credential,
+        audience: this.googleClientId,
+      });
+      
+      const payload = ticket.getPayload();
+      console.log('--- 3. PAYLOAD DE GOOGLE RECIBIDO ---', payload?.email);
+
+      // 1. Validar dominio institucional estricto
+      if (payload?.hd !== this.googleAllowedDomain) {
+        console.log('--- ERROR: DOMINIO INCORRECTO ---', payload?.hd);
+        throw new UnauthorizedException(`Solo se permiten correos institucionales (@${this.googleAllowedDomain})`);
+      }
+
+      // 2. Verificar que Google haya comprobado el correo
+      if (!payload?.email_verified) {
+        console.log('--- ERROR: CORREO NO VERIFICADO ---');
+        throw new UnauthorizedException('El correo no está verificado por Google');
+      }
+
+      console.log('--- 4. BUSCANDO USUARIO EN BASE DE DATOS ---', payload.email);
+      // 3. Buscar en tu base de datos usando el correo
+      const usuario = await this.usuarios.findOne({
+        where: { email: payload.email, activo: true },
+      });
+
+      if (!usuario) {
+        console.log('--- ERROR: USUARIO NO ENCONTRADO EN LA BD ---');
+        throw new UnauthorizedException('Usuario no registrado o inactivo en el sistema');
+      }
+
+      console.log('--- 5. LOGIN EXITOSO, EMITIENDO SESIÓN ---');
+      // 4. Si pasa todo, emite la sesión como el login normal
+      return this.emitirSesion(usuario);
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error desconocido';
+      console.log('--- 🔴 ERROR DETECTADO (ENVIANDO 401) ---', mensaje);
+      
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException('Token de Google inválido o expirado');
+    }
+  }
   /** Rota el refresh token: el recibido queda revocado y se emite uno nuevo. */
   async refresh(refreshToken: string | undefined): Promise<SesionEmitida> {
     if (!refreshToken) throw new UnauthorizedException(SESION_INVALIDA);
