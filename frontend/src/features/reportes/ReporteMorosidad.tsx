@@ -39,7 +39,11 @@ export default function ReporteMorosidad() {
       const url = URL.createObjectURL(blob)
       const enlace = document.createElement('a')
       enlace.href = url
-      enlace.download = `morosidad-${new Date().toISOString().slice(0, 10)}.${extension}`
+      // Fecha de Lima (en-CA da AAAA-MM-DD), igual que el nombre del backend.
+      const hoy = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/Lima',
+      })
+      enlace.download = `morosidad-${hoy}.${extension}`
       enlace.click()
       URL.revokeObjectURL(url)
     } catch (err) {
@@ -56,6 +60,7 @@ export default function ReporteMorosidad() {
           {error}
         </p>
       )}
+      {!reporte && !error && <p role="status">Cargando reporte…</p>}
       {reporte && (
         <>
           <p>
