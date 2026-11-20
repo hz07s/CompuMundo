@@ -1,0 +1,22 @@
+# ADR-020 · HU-021 Cuentas del personal, propuesta para el Sprint 4
+
+**Estado:** Propuesto (requiere aprobación del PO) · **Fecha:** 20/11/2026
+
+## Contexto
+El supuesto P-21 (`docs/decisiones.md`) dice que el seed crea el Administrador inicial y que **este crea los Bibliotecarios**, pero ninguna historia lo implementaba (RF-19 y HU-021 seguían como candidatas). Para preparar la prueba de humo del Sprint 3 hubo que insertar un Bibliotecario con SQL en producción: sin esta función, el sistema no se puede operar sin acceso a la BD.
+
+Según ADR-015, el trabajo no planificado se presenta al PO antes de integrarse.
+
+## Decisión
+- HU-021 se implementa en un PR propio (`feat/HU-021-cuentas-personal`) que **no se fusiona** hasta que el PO lo apruebe y le asigne puntos y sprint. Estimación sugerida: 3 pts.
+- Alcance mínimo:
+  - `POST /usuarios` (alta con contraseña inicial y correo opcional para Google);
+  - `PATCH /usuarios/:id` (rol, deshabilitar o reactivar, nueva contraseña);
+  - la pantalla *Usuarios* del Administrador.
+- Deshabilitar una cuenta o cambiarle la contraseña revoca sus refresh tokens.
+- El Administrador no puede deshabilitarse ni quitarse el rol a sí mismo: así siempre queda al menos un Administrador activo.
+- Auditoría (DoD-7): columnas `creado_por` y `actualizado_por` en `usuarios`.
+
+## Consecuencias
+- Un access token ya emitido sigue siendo válido hasta que vence (máximo 8 h), porque el guard JWT no consulta la BD. Si el PO exige un corte inmediato, se agrega la verificación de `activo` en `JwtAuthGuard`, con una consulta a la BD por cada petición.
+- Si el PO no la aprueba, el PR se cierra sin fusionar y el Bibliotecario se sigue creando con `crear-bibliotecario.cjs`.

@@ -189,7 +189,7 @@ Toda ruta exige access token salvo las marcadas con `@Public()`. Sin token o con
 | `GET /health`, `/api/docs` | ✔ | ✔ | ✔ |
 | Auth: `POST /auth/login`, `/auth/refresh`, `/auth/logout` | ✔ | ✔ | ✔ |
 | Auth: `GET /auth/me` | ✘ | ✔ | ✔ |
-| Usuarios y roles: `GET /usuarios` | ✘ | ✔ | ✘ |
+| Usuarios y roles: `GET /usuarios`, `POST /usuarios`, `PATCH /usuarios/:id` (HU-021) | ✘ | ✔ | ✘ |
 | Catálogo: alta y consulta de obras y ejemplares (`/obras`) | ✘ | ✘ | ✔ |
 | Lectores | ✘ | _por definir_ | _por definir_ |
 | Préstamos: `GET /prestamos/activo`, `PATCH /prestamos/:id/devolucion` | ✘ | ✘ | ✔ |
