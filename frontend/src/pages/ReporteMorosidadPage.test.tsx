@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { reportesApi } from '../features/reportes/reportesApi'
@@ -30,9 +30,23 @@ describe('ReporteMorosidadPage (HU-006, ST-37)', () => {
   it('HU-006 #1 y #4: lista los vencidos con el DNI enmascarado', async () => {
     vi.mocked(reportesApi.morosidad).mockResolvedValue(conDatos)
     render(<ReporteMorosidadPage />)
-    expect(await screen.findByText('Cálculo diferencial')).toBeInTheDocument()
-    expect(screen.getByText('****8912')).toBeInTheDocument()
-    expect(screen.getByText('14')).toBeInTheDocument()
+    const tabla = await screen.findByRole('table')
+    expect(within(tabla).getByText('Cálculo diferencial')).toBeInTheDocument()
+    expect(within(tabla).getByText('****8912')).toBeInTheDocument()
+    // Severidad con texto, no solo color (14 días = grave).
+    expect(
+      within(tabla).getByText('días, atraso grave', { exact: false }),
+    ).toBeInTheDocument()
+  })
+
+  it('HU-006: el resumen muestra el total y el mayor atraso', async () => {
+    vi.mocked(reportesApi.morosidad).mockResolvedValue(conDatos)
+    render(<ReporteMorosidadPage />)
+    const resumen = await screen.findByRole('list', { name: 'Resumen' })
+    const valor = (etiqueta: string) =>
+      within(resumen).getByText(etiqueta).nextElementSibling?.textContent
+    expect(valor('Préstamos vencidos')).toBe('1')
+    expect(valor('Mayor atraso')).toBe('14días')
   })
 
   it('HU-006 #2: el botón Exportar Excel descarga el archivo', async () => {

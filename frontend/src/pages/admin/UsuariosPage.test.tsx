@@ -36,9 +36,7 @@ const conflicto = (message: string) =>
   })
 
 const fila = (nombre: string) =>
-  screen
-    .getByRole('cell', { name: new RegExp(`^${nombre}(Usted)?$`) })
-    .closest('tr')!
+  screen.getByText(nombre, { selector: 'strong' }).closest('tr')!
 
 describe('UsuariosPage (HU-021)', () => {
   beforeEach(() => {

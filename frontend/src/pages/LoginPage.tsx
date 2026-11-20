@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import EstadoApi from '../components/EstadoApi'
+import { googleClientId } from '../config'
 import { destinoTrasLogin, INICIO_POR_ROL } from '../features/auth/rutas'
 import { useAuth } from '../features/auth/useAuth'
 import { normalizarError } from '../services/apiError'
@@ -87,8 +88,16 @@ export default function LoginPage() {
   return (
     <main className="login">
       <form className="tarjeta" onSubmit={onSubmit} noValidate>
-        <h1>CompuMundo CEDIS</h1>
-        <p className="subtitulo">Ingrese con su cuenta del personal</p>
+        <span className="marca" aria-hidden="true">
+          <span className="marca-logo">CM</span>
+          <span>
+            CompuMundo<small>CEDIS</small>
+          </span>
+        </span>
+        <h1>Iniciar sesión</h1>
+        <p className="subtitulo">
+          Sistema de biblioteca del CEDIS. Ingrese con su cuenta del personal.
+        </p>
 
         {errores.general && (
           <p className="alerta" role="alert">
@@ -130,18 +139,22 @@ export default function LoginPage() {
           {enviando ? 'Ingresando…' : 'Ingresar'}
         </button>
 
-        <div className="separador-login" aria-hidden="true">
-          <span>o</span>
-        </div>
-
-        <div className="google-login-contenedor">
-          <GoogleLogin
-            onSuccess={onGoogleSuccess}
-            onError={onGoogleError}
-            text="signin_with"
-            shape="rectangular"
-          />
-        </div>
+        {googleClientId() && (
+          <>
+            <div className="separador-login" aria-hidden="true">
+              <span>o</span>
+            </div>
+            <div className="google-login-contenedor">
+              <GoogleLogin
+                onSuccess={onGoogleSuccess}
+                onError={onGoogleError}
+                text="signin_with"
+                shape="rectangular"
+                width="296"
+              />
+            </div>
+          </>
+        )}
 
         <EstadoApi />
       </form>

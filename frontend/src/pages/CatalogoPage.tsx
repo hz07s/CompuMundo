@@ -12,6 +12,9 @@ export default function CatalogoPage() {
   return (
     <main className="page">
       <h1>Catálogo</h1>
+      <p className="subtitulo">
+        Registre obras con sus ejemplares; cada ejemplar recibe un código único.
+      </p>
       <div className="catalogo">
         <RegistroObraForm
           onRegistrada={(obra) => {
