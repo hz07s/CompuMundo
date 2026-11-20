@@ -16,3 +16,6 @@ La semana del 09 al 13/11 coincidió con exámenes de otros cursos (riesgo R-09/
 - La velocidad del S3 queda en 13 o 5 pts según la decisión del PO.
 - El Sprint 4 arrastra ST-36 y la actualización del CONTEXTO.
 - Se activa la contingencia de `PLAN_CONTINUIDAD_SPRINTS.md` §2.1.
+
+## Resultado (20/11)
+ST-36 se completó dentro del Sprint 3 (`GET /reportes/morosidad.pdf` y botón en la pantalla, PR #68): la contingencia del PDF no hizo falta y HU-006 se presenta completa (13 pts si el PO la acepta). CONTEXTO v2.0 sigue diferido al Planning 4.
