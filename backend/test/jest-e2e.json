@@ -6,6 +6,14 @@
   "globalSetup": "<rootDir>/global-setup.ts",
   "setupFiles": ["<rootDir>/usar-bd-de-pruebas.ts"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  }
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "allowJs": true
+        }
+      }
+    ]
+  },
+  "transformIgnorePatterns": ["/node_modules/(?!@nestjs/schedule/)"]
 }

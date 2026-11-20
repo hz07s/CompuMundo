@@ -36,5 +36,5 @@ Supuestos adoptados para no bloquear HU-005 y HU-006 (replanificación por la se
 
 ### Notas técnicas
 
-1. **Versión de `@nestjs/schedule`.** Quedó en `^6.1.3` porque la v12 es solo ESM y no carga en Jest (el proyecto compila a CommonJS). Revisar si se migra a ESM o si Jest pasa a soportarlo.
+1. **Versión de `@nestjs/schedule`.** Actualizada a `^12` (solo ESM) sin migrar el backend: Node 24 la carga con `require()` y Jest la transforma con `transformIgnorePatterns`. Ver [ADR-019](adr/ADR-019-nestjs-schedule-esm.md).
 2. **`actualizadoPor` en el marcado masivo de vencidos.** El `UPDATE` de `VencidosService.marcar()` no rellena `actualizadoPor` porque lo ejecuta el sistema (cron o proceso previo al reporte), no una persona. Esta es la justificación de DoD-7: la auditoría de usuario solo aplica a acciones de un usuario; la devolución, que sí la hace un Bibliotecario, sí registra `actualizadoPor`.
