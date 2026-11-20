@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import EstadoApi from '../components/EstadoApi'
+import { googleClientId } from '../config'
 import { destinoTrasLogin, INICIO_POR_ROL } from '../features/auth/rutas'
 import { useAuth } from '../features/auth/useAuth'
 import { normalizarError } from '../services/apiError'
@@ -130,18 +131,22 @@ export default function LoginPage() {
           {enviando ? 'Ingresando…' : 'Ingresar'}
         </button>
 
-        <div className="separador-login" aria-hidden="true">
-          <span>o</span>
-        </div>
-
-        <div className="google-login-contenedor">
-          <GoogleLogin
-            onSuccess={onGoogleSuccess}
-            onError={onGoogleError}
-            text="signin_with"
-            shape="rectangular"
-          />
-        </div>
+        {googleClientId() && (
+          <>
+            <div className="separador-login" aria-hidden="true">
+              <span>o</span>
+            </div>
+            <div className="google-login-contenedor">
+              <GoogleLogin
+                onSuccess={onGoogleSuccess}
+                onError={onGoogleError}
+                text="signin_with"
+                shape="rectangular"
+                width="296"
+              />
+            </div>
+          </>
+        )}
 
         <EstadoApi />
       </form>

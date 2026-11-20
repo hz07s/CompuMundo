@@ -100,6 +100,15 @@ describe('LoginPage', () => {
     await waitFor(() => expect(rutaActual()).toBe('/catalogo'))
   })
 
+  it('HU-022: sin VITE_GOOGLE_CLIENT_ID no se ofrece el login con Google', () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
+    renderConRutas('/login')
+
+    expect(screen.queryByTestId('google-login-btn')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ingresar' })).toBeInTheDocument()
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'client-id-de-prueba')
+  })
+
   it('HU-022: login exitoso con Google autentica y redirige según rol', async () => {
     vi.mocked(authApi.loginGoogle).mockResolvedValue(sesion('BIBLIOTECARIO'))
     const { rutaActual } = renderConRutas('/login')

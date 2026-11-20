@@ -2,6 +2,9 @@ import '@testing-library/jest-dom/vitest'
 import React from 'react'
 import { vi } from 'vitest'
 
+// Las pruebas de HU-022 necesitan el botón de Google; LoginPage lo oculta sin client ID.
+vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'client-id-de-prueba')
+
 vi.mock('@react-oauth/google', () => ({
   GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) =>
     children,
