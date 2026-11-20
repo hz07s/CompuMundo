@@ -39,7 +39,11 @@ export default function ReporteMorosidad() {
       const url = URL.createObjectURL(blob)
       const enlace = document.createElement('a')
       enlace.href = url
-      enlace.download = `morosidad-${new Date().toISOString().slice(0, 10)}.${extension}`
+      // Fecha de Lima (en-CA da AAAA-MM-DD), igual que el nombre del backend.
+      const hoy = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/Lima',
+      })
+      enlace.download = `morosidad-${hoy}.${extension}`
       enlace.click()
       URL.revokeObjectURL(url)
     } catch (err) {
@@ -56,11 +60,15 @@ export default function ReporteMorosidad() {
           {error}
         </p>
       )}
+      {!reporte && !error && <p role="status">Cargando reporte…</p>}
       {reporte && (
         <>
           <p>
-            Generado: {new Date(reporte.generadoEn).toLocaleString('es-PE')} ·
-            Total: {reporte.total}
+            Generado:{' '}
+            {new Date(reporte.generadoEn).toLocaleString('es-PE', {
+              timeZone: 'America/Lima',
+            })}{' '}
+            · Total: {reporte.total}
           </p>
           <button
             type="button"
@@ -84,12 +92,12 @@ export default function ReporteMorosidad() {
             <table>
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Título</th>
+                  <th>Código del ejemplar</th>
+                  <th>Título de la obra</th>
                   <th>Lector</th>
                   <th>DNI</th>
-                  <th>Préstamo</th>
-                  <th>Devolución pactada</th>
+                  <th>Fecha de préstamo</th>
+                  <th>Fecha de devolución pactada</th>
                   <th>Días de atraso</th>
                   <th>Registrado por</th>
                 </tr>

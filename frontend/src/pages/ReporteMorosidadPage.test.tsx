@@ -59,4 +59,25 @@ describe('ReporteMorosidadPage (HU-006, ST-37)', () => {
       await screen.findByText('No hay préstamos vencidos'),
     ).toBeInTheDocument()
   })
+
+  it('HU-006 #3: el botón Exportar PDF descarga el archivo', async () => {
+    vi.mocked(reportesApi.morosidad).mockResolvedValue(conDatos)
+    vi.mocked(reportesApi.morosidadPdf).mockResolvedValue(new Blob(['x']))
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    const user = userEvent.setup()
+    render(<ReporteMorosidadPage />)
+    await user.click(
+      await screen.findByRole('button', { name: 'Exportar PDF' }),
+    )
+    expect(reportesApi.morosidadPdf).toHaveBeenCalledOnce()
+  })
+
+  it('HU-006: muestra "Cargando" y luego el error si la consulta falla', async () => {
+    vi.mocked(reportesApi.morosidad).mockRejectedValue(new Error('x'))
+    render(<ReporteMorosidadPage />)
+    expect(screen.getByText('Cargando reporte…')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByText('Cargando reporte…')).not.toBeInTheDocument()
+  })
 })
