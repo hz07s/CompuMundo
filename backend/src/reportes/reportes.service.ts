@@ -32,7 +32,7 @@ export class ReportesService {
   /**
    * P-18 / RN-06b: marca los vencidos antes de consultar para no mostrar datos
    * desactualizados. El DNI sale siempre enmascarado (DoD-8); orden: más
-   * atraso primero.
+   * atraso primero y, a igual atraso, por código del ejemplar.
    */
   async morosidad(ahora: Date = new Date()): Promise<MorosidadResponseDto> {
     await this.vencidos.marcar(ahora);
@@ -53,7 +53,12 @@ export class ReportesService {
         diasAtraso: diasEntre(p.fechaDevolucion, hoy),
         registradoPor: p.creador?.nombreUsuario ?? null,
       }))
-      .sort((a, b) => b.diasAtraso - a.diasAtraso);
+      // Desempate estable por código (D-05): pantalla, Excel y PDF en el mismo orden.
+      .sort(
+        (a, b) =>
+          b.diasAtraso - a.diasAtraso ||
+          a.codigoEjemplar.localeCompare(b.codigoEjemplar),
+      );
     return { generadoEn: ahora.toISOString(), total: filas.length, filas };
   }
 }
