@@ -180,6 +180,42 @@ describe('UsuariosPage (HU-021)', () => {
     )
   })
 
+  it('HU-021: si Reactivar falla muestra el error del servidor', async () => {
+    vi.mocked(usuariosApi.listar).mockResolvedValue([
+      admin,
+      { ...biblio, activo: false },
+    ])
+    vi.mocked(usuariosApi.actualizar).mockRejectedValue(
+      conflicto('Usuario no encontrado'),
+    )
+    const user = userEvent.setup()
+    render(<UsuariosPage />)
+    await screen.findByRole('table')
+
+    await user.click(
+      within(fila('mquispe')).getByRole('button', { name: 'Reactivar' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Usuario no encontrado',
+    )
+  })
+
+  it('HU-021 #5: en su propia fila no puede cambiar rol, estado ni contraseña', async () => {
+    render(<UsuariosPage />)
+    await screen.findByRole('table')
+
+    for (const nombre of [
+      'Deshabilitar',
+      'Hacer Bibliotecario',
+      'Nueva contraseña',
+    ]) {
+      expect(
+        within(fila('admin')).getByRole('button', { name: nombre }),
+      ).toBeDisabled()
+    }
+  })
+
   it('muestra el error si no se pudo cargar el listado', async () => {
     vi.mocked(usuariosApi.listar).mockRejectedValue(new Error('x'))
     render(<UsuariosPage />)

@@ -89,6 +89,7 @@ export default function TablaCuentas({
           <button
             type="button"
             className="boton-texto"
+            disabled={guardando}
             onClick={() =>
               void aplicar(
                 c,
@@ -119,6 +120,12 @@ export default function TablaCuentas({
         <button
           type="button"
           className="boton-texto"
+          disabled={propia}
+          title={
+            propia
+              ? 'Cambiar su propia contraseña cerraría esta sesión; pídalo a otro Administrador'
+              : undefined
+          }
           onClick={() => abrir({ tipo: 'clave', cuenta: c })}
         >
           Nueva contraseña
@@ -208,42 +215,52 @@ export default function TablaCuentas({
   }
 
   return (
-    <div className="tabla-contenedor">
-      <table className="tabla">
-        <caption>Personal del sistema ({cuentas.length})</caption>
-        <thead>
-          <tr>
-            <th scope="col">Usuario</th>
-            <th scope="col">Rol</th>
-            <th scope="col">Correo de Google</th>
-            <th scope="col">Estado</th>
-            <th scope="col">
-              <span className="sr-only">Acciones</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {cuentas.map((c) => (
-            <Fragment key={c.id}>
-              <tr className={c.activo ? undefined : 'fila-inactiva'}>
-                <td>
-                  {c.nombreUsuario}
-                  {c.id === idPropio && <span className="etiqueta">Usted</span>}
-                </td>
-                <td>{NOMBRE_ROL[c.rol]}</td>
-                <td>{c.email ?? '—'}</td>
-                <td>
-                  <span className={`estado ${c.activo ? 'ok' : 'apagado'}`}>
-                    {c.activo ? 'Activa' : 'Deshabilitada'}
-                  </span>
-                </td>
-                <td>{acciones(c)}</td>
-              </tr>
-              {panel(c)}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      {/* Errores de acciones sin panel (p. ej. Reactivar). */}
+      {error && !accion && (
+        <p className="alerta" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="tabla-contenedor">
+        <table className="tabla">
+          <caption>Personal del sistema ({cuentas.length})</caption>
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Correo de Google</th>
+              <th scope="col">Estado</th>
+              <th scope="col">
+                <span className="sr-only">Acciones</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {cuentas.map((c) => (
+              <Fragment key={c.id}>
+                <tr className={c.activo ? undefined : 'fila-inactiva'}>
+                  <td>
+                    {c.nombreUsuario}
+                    {c.id === idPropio && (
+                      <span className="etiqueta">Usted</span>
+                    )}
+                  </td>
+                  <td>{NOMBRE_ROL[c.rol]}</td>
+                  <td>{c.email ?? '—'}</td>
+                  <td>
+                    <span className={`estado ${c.activo ? 'ok' : 'apagado'}`}>
+                      {c.activo ? 'Activa' : 'Deshabilitada'}
+                    </span>
+                  </td>
+                  <td>{acciones(c)}</td>
+                </tr>
+                {panel(c)}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

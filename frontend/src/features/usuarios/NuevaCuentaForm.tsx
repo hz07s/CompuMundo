@@ -41,7 +41,8 @@ export default function NuevaCuentaForm({ onCreada }: Props) {
 
     setEnviando(true)
     try {
-      const email = form.email.trim()
+      // Minúsculas: Google entrega el correo así (HU-022).
+      const email = form.email.trim().toLowerCase()
       const cuenta = await usuariosApi.crear({
         nombreUsuario: form.nombreUsuario.trim().toLowerCase(),
         password: form.password,
