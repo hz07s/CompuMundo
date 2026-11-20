@@ -192,8 +192,9 @@ Toda ruta exige access token salvo las marcadas con `@Public()`. Sin token o con
 | Usuarios y roles: `GET /usuarios` | ✘ | ✔ | ✘ |
 | Catálogo: alta y consulta de obras y ejemplares (`/obras`) | ✘ | ✘ | ✔ |
 | Lectores | ✘ | _por definir_ | _por definir_ |
-| Préstamos | ✘ | _por definir_ | _por definir_ |
-| Reportes | ✘ | _por definir_ | _por definir_ |
+| Préstamos: `GET /prestamos/activo`, `PATCH /prestamos/:id/devolucion` | ✘ | ✘ | ✔ |
+| Préstamos: `POST /prestamos/vencidos/marcar` (marcado manual de vencidos) | ✘ | ✔ | ✘ |
+| Reportes: `GET /reportes/morosidad`, `/reportes/morosidad.xlsx`, `/reportes/morosidad.pdf` | ✘ | ✔ | ✔ |
 
 El catálogo es solo del Bibliotecario según el supuesto de [`docs/decisiones.md`](docs/decisiones.md).
 
