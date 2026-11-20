@@ -99,6 +99,11 @@
         {
           "tsconfig": {
             "isolatedModules": false
+          },
+          "diagnostics": {
+            "ignoreCodes": [
+              151002
+            ]
           }
         }
       ]

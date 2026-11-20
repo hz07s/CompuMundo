@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { EstadoPrestamo } from './entities/prestamo.entity';
 import { VencidosService } from './vencidos.service';
@@ -48,10 +49,17 @@ describe('VencidosService (HU-005, RN-06)', () => {
   });
 
   it('RN-06b: al arrancar recupera el marcado perdido y un fallo no tumba la app', async () => {
+    const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    const error = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
     await servicio.onApplicationBootstrap();
     expect(builder.execute).toHaveBeenCalledTimes(1);
 
     builder.execute.mockRejectedValue(new Error('BD caída'));
     await expect(servicio.onApplicationBootstrap()).resolves.toBeUndefined();
+    expect(error).toHaveBeenCalledTimes(1);
+
+    log.mockRestore();
+    error.mockRestore();
   });
 });
