@@ -5,6 +5,10 @@ export default function ReporteMorosidadPage() {
   return (
     <main className="page">
       <h1>Reporte de morosidad</h1>
+      <p className="subtitulo">
+        Préstamos con la fecha de devolución vencida. El DNI se muestra siempre
+        enmascarado.
+      </p>
       <ReporteMorosidad />
     </main>
   )

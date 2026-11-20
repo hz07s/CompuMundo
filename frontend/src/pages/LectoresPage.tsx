@@ -10,6 +10,10 @@ export default function LectoresPage() {
   return (
     <main className="page">
       <h1>Lectores</h1>
+      <p className="subtitulo">
+        Registre a estudiantes y docentes. Los menores de edad requieren los
+        datos de su apoderado.
+      </p>
       <div className="catalogo">
         <RegistroLectorForm onRegistrado={setRegistrado} />
         {registrado && <LectorRegistrado lector={registrado} />}

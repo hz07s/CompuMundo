@@ -88,8 +88,16 @@ export default function LoginPage() {
   return (
     <main className="login">
       <form className="tarjeta" onSubmit={onSubmit} noValidate>
-        <h1>CompuMundo CEDIS</h1>
-        <p className="subtitulo">Ingrese con su cuenta del personal</p>
+        <span className="marca" aria-hidden="true">
+          <span className="marca-logo">CM</span>
+          <span>
+            CompuMundo<small>CEDIS</small>
+          </span>
+        </span>
+        <h1>Iniciar sesión</h1>
+        <p className="subtitulo">
+          Sistema de biblioteca del CEDIS. Ingrese con su cuenta del personal.
+        </p>
 
         {errores.general && (
           <p className="alerta" role="alert">

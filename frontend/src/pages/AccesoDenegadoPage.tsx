@@ -11,10 +11,12 @@ export default function AccesoDenegadoPage() {
       : RUTAS.login
 
   return (
-    <main className="page">
+    <main className="pagina-error">
       <h1>Acceso denegado</h1>
       <p>Su rol no tiene permiso para ver esta página.</p>
-      <Link to={inicio}>Ir a mi inicio</Link>
+      <Link to={inicio} className="boton-primario">
+        Ir a mi inicio
+      </Link>
     </main>
   )
 }
