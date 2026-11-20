@@ -7,6 +7,14 @@ export const reportesApi = {
     return data
   },
 
+  /** HU-006 #3: descarga el .pdf como blob. */
+  async morosidadPdf() {
+    const { data } = await api.get<Blob>('/reportes/morosidad.pdf', {
+      responseType: 'blob',
+    })
+    return data
+  },
+
   /** HU-006 #2: descarga el .xlsx como blob. */
   async morosidadExcel() {
     const { data } = await api.get<Blob>('/reportes/morosidad.xlsx', {

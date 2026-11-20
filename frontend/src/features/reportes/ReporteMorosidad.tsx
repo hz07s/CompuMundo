@@ -24,14 +24,22 @@ export default function ReporteMorosidad() {
   }, [cargar])
 
   async function exportarExcel() {
+    await descargar(reportesApi.morosidadExcel, 'xlsx')
+  }
+
+  async function exportarPdf() {
+    await descargar(reportesApi.morosidadPdf, 'pdf')
+  }
+
+  async function descargar(obtener: () => Promise<Blob>, extension: string) {
     setError(null)
     setExportando(true)
     try {
-      const blob = await reportesApi.morosidadExcel()
+      const blob = await obtener()
       const url = URL.createObjectURL(blob)
       const enlace = document.createElement('a')
       enlace.href = url
-      enlace.download = `morosidad-${new Date().toISOString().slice(0, 10)}.xlsx`
+      enlace.download = `morosidad-${new Date().toISOString().slice(0, 10)}.${extension}`
       enlace.click()
       URL.revokeObjectURL(url)
     } catch (err) {
@@ -61,6 +69,14 @@ export default function ReporteMorosidad() {
             disabled={exportando}
           >
             Exportar Excel
+          </button>{' '}
+          <button
+            type="button"
+            className="boton-secundario"
+            onClick={exportarPdf}
+            disabled={exportando}
+          >
+            Exportar PDF
           </button>
           {reporte.total === 0 ? (
             <p role="status">No hay préstamos vencidos</p>

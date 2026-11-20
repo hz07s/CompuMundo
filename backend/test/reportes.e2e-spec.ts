@@ -134,8 +134,22 @@ describe('HU-006 Reporte de morosidad (e2e)', () => {
     for (const dni of dnis) expect(texto).not.toContain(dni);
   });
 
+  it('HU-006 #3: exporta .pdf válido', async () => {
+    const res = await get('/reportes/morosidad.pdf', tokenBiblio)
+      .buffer(true)
+      .parse((r, cb) => {
+        const trozos: Buffer[] = [];
+        r.on('data', (t: Buffer) => trozos.push(t));
+        r.on('end', () => cb(null, Buffer.concat(trozos)));
+      })
+      .expect(200);
+    expect(res.headers['content-type']).toContain('application/pdf');
+    expect((res.body as Buffer).subarray(0, 4).toString()).toBe('%PDF');
+  });
+
   it('HU-006 #6: sin token → 401', async () => {
     await get('/reportes/morosidad').expect(401);
     await get('/reportes/morosidad.xlsx').expect(401);
+    await get('/reportes/morosidad.pdf').expect(401);
   });
 });
