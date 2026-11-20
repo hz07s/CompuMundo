@@ -26,6 +26,9 @@ const sesion = (rol: 'ADMINISTRADOR' | 'BIBLIOTECARIO') => ({
 })
 
 describe('LoginPage', () => {
+  // Cada prueba parte con el client ID de setup.ts aunque otra lo haya vaciado.
+  afterEach(() => vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'client-id-de-prueba'))
+
   beforeEach(() => {
     sesionStore.reiniciar({ estado: 'anonimo' })
     vi.mocked(getHealth).mockResolvedValue({ status: 'ok' })
@@ -106,7 +109,6 @@ describe('LoginPage', () => {
 
     expect(screen.queryByTestId('google-login-btn')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Ingresar' })).toBeInTheDocument()
-    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'client-id-de-prueba')
   })
 
   it('HU-022: login exitoso con Google autentica y redirige según rol', async () => {
