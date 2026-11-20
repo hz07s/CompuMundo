@@ -1,14 +1,18 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { RefreshToken } from '../auth/entities/refresh-token.entity';
+import { PasswordService } from '../auth/password.service';
 import { Usuario } from './entities/usuario.entity';
 import { UsuariosController } from './usuarios.controller';
 import { UsuariosService } from './usuarios.service';
 
-/** Personal del sistema: Administradores y Bibliotecarios. */
+/** Personal del sistema: Administradores y Bibliotecarios (HU-021). */
 @Module({
-  imports: [TypeOrmModule.forFeature([Usuario])],
+  imports: [TypeOrmModule.forFeature([Usuario, RefreshToken])],
   controllers: [UsuariosController],
-  providers: [UsuariosService],
+  // PasswordService (sin estado) también aquí: AuthModule ya importa este
+  // módulo y la importación inversa sería circular.
+  providers: [UsuariosService, PasswordService],
   exports: [TypeOrmModule],
 })
 export class UsuariosModule {}
