@@ -47,6 +47,8 @@ jobs:
       - run: npm run build
       - run: npm run format:check
       - run: npm run lint:ci
+      - name: Tipos de src y test (incluye e2e, que ts-jest no revisa)
+        run: npm run typecheck
       - name: Pruebas unitarias con cobertura (70 % global, 85 % auth)
         run: npm run test:cov
       - name: Migraciones
