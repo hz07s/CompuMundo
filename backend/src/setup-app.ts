@@ -33,6 +33,8 @@ export function setupApp(app: INestApplication): void {
         'obras',
         'Catálogo: obras y ejemplares (HU-002, solo Bibliotecario)',
       )
+      .addTag('prestamos', 'Préstamos y devoluciones (HU-004, HU-005)')
+      .addTag('reportes', 'Reportes: morosidad exportable (HU-006)')
       .build(),
   );
   // UI en /api/docs y especificación descargable en /api/docs-json

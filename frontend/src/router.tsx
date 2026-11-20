@@ -11,6 +11,7 @@ import LectoresPage from './pages/LectoresPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PrestamosPage from './pages/PrestamosPage'
+import ReporteMorosidadPage from './pages/ReporteMorosidadPage'
 
 export const rutas: RouteObject[] = [
   { path: RUTAS.login, element: <LoginPage /> },
@@ -39,6 +40,12 @@ export const rutas: RouteObject[] = [
               <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.devolucion]} />
             ),
             children: [{ path: RUTAS.devolucion, element: <DevolucionPage /> }],
+          },
+          {
+            element: <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.morosidad]} />,
+            children: [
+              { path: RUTAS.morosidad, element: <ReporteMorosidadPage /> },
+            ],
           },
           {
             element: <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.prestamos]} />,
