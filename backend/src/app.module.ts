@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { CatalogoModule } from './catalogo/catalogo.module';
@@ -27,6 +28,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
           DATABASE_SSL: config.get<boolean>('DATABASE_SSL'),
         }),
     }),
+    ScheduleModule.forRoot(),
     CommonModule,
     HealthModule,
     AuthModule,
