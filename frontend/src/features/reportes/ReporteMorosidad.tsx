@@ -45,7 +45,8 @@ export default function ReporteMorosidad() {
       })
       enlace.download = `morosidad-${hoy}.${extension}`
       enlace.click()
-      URL.revokeObjectURL(url)
+      // D-03: revocar después de que el navegador tome la descarga.
+      setTimeout(() => URL.revokeObjectURL(url), 0)
     } catch (err) {
       setError(normalizarError(err).mensaje)
     } finally {
@@ -89,17 +90,18 @@ export default function ReporteMorosidad() {
           {reporte.total === 0 ? (
             <p role="status">No hay préstamos vencidos</p>
           ) : (
-            <table>
+            <table className="tabla">
+              <caption>Préstamos vencidos ({reporte.total})</caption>
               <thead>
                 <tr>
-                  <th>Código del ejemplar</th>
-                  <th>Título de la obra</th>
-                  <th>Lector</th>
-                  <th>DNI</th>
-                  <th>Fecha de préstamo</th>
-                  <th>Fecha de devolución pactada</th>
-                  <th>Días de atraso</th>
-                  <th>Registrado por</th>
+                  <th scope="col">Código del ejemplar</th>
+                  <th scope="col">Título de la obra</th>
+                  <th scope="col">Lector</th>
+                  <th scope="col">DNI</th>
+                  <th scope="col">Fecha de préstamo</th>
+                  <th scope="col">Fecha de devolución pactada</th>
+                  <th scope="col">Días de atraso</th>
+                  <th scope="col">Registrado por</th>
                 </tr>
               </thead>
               <tbody>
