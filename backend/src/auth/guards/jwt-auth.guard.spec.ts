@@ -1,6 +1,8 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Rol } from '../../usuarios/rol.enum';
 import { Public } from '../decorators/public.decorator';
 import { JwtAuthGuard, RequestAutenticado } from './jwt-auth.guard';
@@ -14,7 +16,29 @@ class RutasDePrueba {
 
 describe('JwtAuthGuard', () => {
   const jwt = new JwtService({ secret: 'secreto-de-pruebas' });
-  const guard = new JwtAuthGuard(jwt, new Reflector());
+  // Estado actual de las cuentas en la BD (HU-021).
+  let cuentas: Record<string, Partial<Usuario>>;
+  const repo = {
+    findOne: jest.fn(({ where }: { where: { id: string } }) =>
+      Promise.resolve(cuentas[where.id] ?? null),
+    ),
+  };
+  const guard = new JwtAuthGuard(
+    jwt,
+    new Reflector(),
+    repo as unknown as Repository<Usuario>,
+  );
+
+  beforeEach(() => {
+    cuentas = {
+      'u-1': {
+        id: 'u-1',
+        nombreUsuario: 'admin',
+        rol: Rol.ADMINISTRADOR,
+        activo: true,
+      },
+    };
+  });
 
   const contexto = (
     authorization?: string,
@@ -49,6 +73,37 @@ describe('JwtAuthGuard', () => {
       nombreUsuario: 'admin',
       rol: Rol.ADMINISTRADOR,
     });
+  });
+
+  it('HU-021 #3: una cuenta deshabilitada o inexistente → 401 aunque el token sea válido', async () => {
+    const token = await jwt.signAsync({
+      sub: 'u-1',
+      nombreUsuario: 'admin',
+      rol: Rol.ADMINISTRADOR,
+    });
+    cuentas['u-1'].activo = false;
+    await expect(
+      guard.canActivate(contexto(`Bearer ${token}`).context),
+    ).rejects.toThrow(UnauthorizedException);
+
+    delete cuentas['u-1'];
+    await expect(
+      guard.canActivate(contexto(`Bearer ${token}`).context),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('HU-021 #4: el rol vigente es el de la BD, no el que quedó en el token', async () => {
+    const token = await jwt.signAsync({
+      sub: 'u-1',
+      nombreUsuario: 'admin',
+      rol: Rol.ADMINISTRADOR,
+    });
+    cuentas['u-1'].rol = Rol.BIBLIOTECARIO;
+    const { request, context } = contexto(`Bearer ${token}`);
+
+    await guard.canActivate(context);
+
+    expect(request.user?.rol).toBe(Rol.BIBLIOTECARIO);
   });
 
   it.each([

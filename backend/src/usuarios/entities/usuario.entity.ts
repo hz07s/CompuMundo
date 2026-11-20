@@ -2,6 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -49,6 +51,26 @@ export class Usuario {
   /** Baja lógica (RNF-07). */
   @Column({ default: true })
   activo!: boolean;
+
+  /**
+   * Administrador que creó o modificó la cuenta (HU-021, DoD-7). No extiende
+   * EntidadAuditada para no crear una importación circular con Usuario. Nulo
+   * en cuentas del seed o anteriores a HU-021.
+   */
+  @Column({ name: 'creado_por', type: 'uuid', nullable: true })
+  creadoPor!: string | null;
+
+  // SET NULL: las cuentas no se borran (RNF-07), pero las pruebas sí limpian las suyas.
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'creado_por' })
+  creador?: Usuario | null;
+
+  @Column({ name: 'actualizado_por', type: 'uuid', nullable: true })
+  actualizadoPor!: string | null;
+
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'actualizado_por' })
+  actualizador?: Usuario | null;
 
   @CreateDateColumn({ name: 'creado_en', type: 'timestamptz' })
   creadoEn!: Date;

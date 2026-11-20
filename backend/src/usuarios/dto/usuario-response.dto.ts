@@ -11,6 +11,9 @@ export class UsuarioResponseDto {
   @ApiProperty({ enum: Rol, enumName: 'Rol' })
   rol!: Rol;
 
+  @ApiProperty({ type: String, nullable: true, example: 'mquispe@unsa.edu.pe' })
+  email!: string | null;
+
   @ApiProperty()
   activo!: boolean;
 

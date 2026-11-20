@@ -6,7 +6,7 @@ Supuestos adoptados mientras se cierran los pendientes. Cuando una decisión se 
 | --- | --- | --- | --- |
 | P-31 · alcance de T-001 | ST-02, ST-05, ST-10 | Backend y PostgreSQL en Railway; frontend en Vercel desde `main`; sin staging separado. | Por confirmar en la Planning (ST-05) |
 | P-17 · tokens | ST-07, ST-10, ST-11 | Access token en memoria del cliente; refresh token en cookie httpOnly; en BD solo su hash, rotado en cada uso y revocado en logout. | Supuesto |
-| P-21 · cuentas del personal | ST-06 | Sin autorregistro. Un seed crea el Administrador inicial (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) y este crea los Bibliotecarios. | Supuesto |
+| P-21 · cuentas del personal | ST-06, HU-021 | Sin autorregistro. Un seed crea el Administrador inicial (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) y este crea los Bibliotecarios desde *Usuarios* (HU-021). | Propuesto en [ADR-020](adr/ADR-020-hu-021-cuentas-personal.md), pendiente del PO |
 | P-18 · campos de la obra | ST-12–14 | Título, categoría, autores, fecha de publicación y cantidad. Confirmar si se agregan volumen y año de edición (RF-12). | Confirmar con el bibliotecario |
 | P-24 · código de ejemplar | ST-12 | `CEDIS-{AÑO}-{SECUENCIAL}`: año de alta y secuencial de 6 dígitos que se reinicia cada año (`CEDIS-2026-000001`). | Supuesto |
 | ORM y pruebas | ST-01 | TypeORM con migraciones; Jest en backend, Vitest en frontend. | Adoptado en el repo |

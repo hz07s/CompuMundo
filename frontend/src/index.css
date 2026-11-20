@@ -333,3 +333,71 @@ button:disabled {
 .tabla-contenedor {
   overflow-x: auto;
 }
+
+/* Cuentas del personal (HU-021) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ayuda,
+.opcional {
+  font-size: 0.85rem;
+  color: #616e7c;
+}
+
+.exito {
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  background: #def7ec;
+  color: #03543f;
+}
+
+.etiqueta {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #e1effe;
+  color: #1e429f;
+  font-size: 0.75rem;
+}
+
+.estado.ok {
+  color: #03543f;
+}
+
+.estado.apagado {
+  color: #616e7c;
+}
+
+.fila-inactiva td {
+  color: #9aa5b1;
+}
+
+.acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.boton-texto {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1d4ed8;
+}
+
+.boton-texto.peligro {
+  color: #c81e1e;
+}
+
+.panel-accion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
