@@ -20,3 +20,21 @@ Registrar aquí lo que se decida en la Sprint Planning:
 - [ ] ¿Habrá staging separado o solo producción?
 - [ ] ¿El despliegue desde `main` es automático o manual?
 - [ ] ¿El dominio .pe entra en este sprint?
+
+## Decisiones del Sprint 3
+
+Supuestos adoptados para no bloquear HU-005 y HU-006 (replanificación por la semana de exámenes, ver [ADR-018](adr/ADR-018-recorte-sprint-3.md)).
+
+| ID | Pendiente | Supuesto adoptado | Estado |
+| --- | --- | --- | --- |
+| RN-06 | Hora del marcado diario de vencidos | 00:05, zona `America/Lima`, con `@nestjs/schedule`. Es idempotente. `POST /prestamos/vencidos/marcar` (solo Administrador) lo ejecuta a mano para pruebas y demos. | Supuesto, confirmar en la Review 3 |
+| RN-06b | Servidor dormido (Railway) a esa hora | El reporte de morosidad ejecuta el marcado antes de consultar, así nunca muestra datos desactualizados. | Supuesto, confirmar en la Review 3 |
+| P-18 | Columnas del reporte de morosidad | Código del ejemplar · Título de la obra · Lector (nombres y apellidos) · DNI enmascarado `****1234` · Fecha de préstamo · Fecha de devolución pactada · Días de atraso (días calendario desde la fecha pactada hasta hoy, en Lima) · Registrado por. Orden: más días de atraso primero. | Supuesto, confirmar en la Review 3 |
+| HU-005 | Ubicar el préstamo en la devolución | Por el código del ejemplar: `GET /prestamos/activo?codigoEjemplar=` y luego `PATCH /prestamos/:id/devolucion`. | Supuesto, confirmar en la Review 3 |
+| HU-005 | Historial de "estuvo vencido" (RN-02) | Sin columna nueva: un préstamo devuelto con atraso es aquel con `fecha_devuelto > fecha_devolucion`, el mismo criterio de `morosidad.service.ts`. | Supuesto, confirmar en la Review 3 |
+| HU-006 | Roles con acceso al reporte | Bibliotecario y Administrador. El DNI va siempre enmascarado, en pantalla y en los archivos exportados (DoD-8). | Supuesto, confirmar en la Review 3 |
+
+### Notas técnicas
+
+1. **Versión de `@nestjs/schedule`.** Quedó en `^6.1.3` porque la v12 es solo ESM y no carga en Jest (el proyecto compila a CommonJS). Revisar si se migra a ESM o si Jest pasa a soportarlo.
+2. **`actualizadoPor` en el marcado masivo de vencidos.** El `UPDATE` de `VencidosService.marcar()` no rellena `actualizadoPor` porque lo ejecuta el sistema (cron o proceso previo al reporte), no una persona. Esta es la justificación de DoD-7: la auditoría de usuario solo aplica a acciones de un usuario; la devolución, que sí la hace un Bibliotecario, sí registra `actualizadoPor`.
