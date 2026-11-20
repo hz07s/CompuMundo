@@ -4,6 +4,7 @@ import {
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiProduces,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -40,6 +41,7 @@ export class ReportesController {
     summary: 'Exportar el reporte de morosidad a PDF (HU-006 #3)',
     description: 'Mismo contenido que GET /reportes/morosidad.',
   })
+  @ApiProduces(CONTENT_TYPE_PDF)
   @ApiOkResponse({ description: 'Archivo .pdf' })
   async morosidadPdf(): Promise<StreamableFile> {
     const archivo = await generarPdfMorosidad(await this.reportes.morosidad());
@@ -55,6 +57,7 @@ export class ReportesController {
     summary: 'Exportar el reporte de morosidad a Excel (HU-006 #2)',
     description: 'Mismo contenido que GET /reportes/morosidad.',
   })
+  @ApiProduces(CONTENT_TYPE_XLSX)
   @ApiOkResponse({ description: 'Archivo .xlsx' })
   async morosidadExcel(): Promise<StreamableFile> {
     const archivo = await generarExcelMorosidad(
