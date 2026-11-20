@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { normalizarError } from '../../services/apiError'
+import { formatearFecha } from '../prestamos/types'
 import { obrasApi } from './obrasApi'
 import type { ObrasPaginadas } from './types'
 
@@ -38,35 +39,51 @@ export default function ListadoObras({ version }: { version: number }) {
           {error}
         </p>
       )}
-      {!resultado && !error && <p>Cargando…</p>}
-      {resultado?.total === 0 && <p>Todavía no hay obras registradas.</p>}
+      {!resultado && !error && <p role="status">Cargando…</p>}
+      {resultado?.total === 0 && (
+        <p className="vacio">
+          <strong>Todavía no hay obras registradas</strong>
+          Registre la primera con el formulario.
+        </p>
+      )}
       {resultado && resultado.total > 0 && (
         <>
           <div className="tabla-contenedor">
             <table className="tabla">
+              <caption>
+                {resultado.total} obra{resultado.total === 1 ? '' : 's'}
+              </caption>
               <thead>
                 <tr>
-                  <th>Título</th>
-                  <th>Autores</th>
-                  <th>Categoría</th>
-                  <th>Publicación</th>
-                  <th>Edición</th>
-                  <th>Disponibles</th>
+                  <th scope="col">Título</th>
+                  <th scope="col">Autores</th>
+                  <th scope="col">Categoría</th>
+                  <th scope="col">Publicación</th>
+                  <th scope="col">Edición</th>
+                  <th scope="col">Disponibles</th>
                 </tr>
               </thead>
               <tbody>
                 {resultado.data.map((o) => (
                   <tr key={o.id}>
-                    <td>{o.titulo}</td>
+                    <td>
+                      <strong>{o.titulo}</strong>
+                    </td>
                     <td>{o.autores.join(', ')}</td>
                     <td>{o.categoria}</td>
-                    <td>{o.fechaPublicacion}</td>
+                    <td className="nowrap">
+                      {formatearFecha(o.fechaPublicacion)}
+                    </td>
                     <td>
                       {o.anioEdicion}
                       {o.volumen !== null && ` · Vol. ${o.volumen}`}
                     </td>
                     <td>
-                      {o.disponibilidad} / {o.totalEjemplares}
+                      <span
+                        className={`estado ${o.disponibilidad > 0 ? 'ok' : 'apagado'}`}
+                      >
+                        {o.disponibilidad} / {o.totalEjemplares}
+                      </span>
                     </td>
                   </tr>
                 ))}

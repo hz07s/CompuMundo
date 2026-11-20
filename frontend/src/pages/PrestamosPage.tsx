@@ -38,6 +38,16 @@ export default function PrestamosPage() {
     lector.morosidad.estado !== 'BLOQUEADO'
   const puedeRegistrar =
     rol === 'BIBLIOTECARIO' && lectorApto && !!ejemplar?.disponible
+  // Explica por qué el botón está deshabilitado (no deja al usuario adivinando).
+  const falta = !lector
+    ? 'Verifique primero al lector.'
+    : !lectorApto
+      ? 'El lector no puede recibir un préstamo ahora.'
+      : !ejemplar
+        ? 'Consulte el ejemplar que se va a prestar.'
+        : !ejemplar.disponible
+          ? 'El ejemplar no está disponible.'
+          : null
 
   async function registrar() {
     if (!lector || !ejemplar) return
@@ -70,6 +80,10 @@ export default function PrestamosPage() {
   return (
     <main className="page">
       <h1>Préstamos</h1>
+      <p className="subtitulo">
+        Verifique al lector con su DNI físico, elija el ejemplar y registre el
+        préstamo. La devolución se fija a 3 días hábiles.
+      </p>
       {rol === 'ADMINISTRADOR' && (
         <p className="aviso">
           Como Administrador puede consultar al lector y desbloquearlo; solo el
@@ -111,14 +125,22 @@ export default function PrestamosPage() {
       )}
 
       {rol === 'BIBLIOTECARIO' && (
-        <button
-          type="button"
-          className="boton-primario"
-          onClick={registrar}
-          disabled={!puedeRegistrar || registrando}
-        >
-          {registrando ? 'Registrando…' : 'Registrar préstamo'}
-        </button>
+        <div className="barra">
+          <button
+            type="button"
+            className="boton-primario"
+            onClick={registrar}
+            disabled={!puedeRegistrar || registrando}
+            aria-describedby={falta ? 'falta-prestamo' : undefined}
+          >
+            {registrando ? 'Registrando…' : 'Registrar préstamo'}
+          </button>
+          {falta && (
+            <span id="falta-prestamo" className="ayuda">
+              {falta}
+            </span>
+          )}
+        </div>
       )}
 
       {registrado && <PrestamoConfirmado prestamo={registrado} />}

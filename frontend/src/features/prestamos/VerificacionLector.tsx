@@ -73,9 +73,11 @@ export default function VerificacionLector({
   return (
     <section className="formulario" aria-label="Verificación del lector">
       <h2>1. Verificar al lector</h2>
+      <label htmlFor="dni-lector">DNI del lector</label>
       <form onSubmit={verificar} noValidate className="fila-autor">
         <input
-          aria-label="DNI del lector"
+          id="dni-lector"
+          placeholder="8 dígitos"
           value={dni}
           onChange={(e) => setDni(e.target.value)}
           inputMode="numeric"

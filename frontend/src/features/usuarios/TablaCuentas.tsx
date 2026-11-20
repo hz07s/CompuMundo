@@ -138,7 +138,7 @@ export default function TablaCuentas({
     if (!accion || accion.cuenta.id !== c.id) return null
     return (
       <tr className="fila-panel">
-        <td colSpan={5}>
+        <td colSpan={4}>
           {accion.tipo === 'confirmar' ? (
             <div
               className="panel-accion"
@@ -229,7 +229,6 @@ export default function TablaCuentas({
             <tr>
               <th scope="col">Usuario</th>
               <th scope="col">Rol</th>
-              <th scope="col">Correo de Google</th>
               <th scope="col">Estado</th>
               <th scope="col">
                 <span className="sr-only">Acciones</span>
@@ -240,14 +239,16 @@ export default function TablaCuentas({
             {cuentas.map((c) => (
               <Fragment key={c.id}>
                 <tr className={c.activo ? undefined : 'fila-inactiva'}>
-                  <td>
-                    {c.nombreUsuario}
+                  <td className="nowrap">
+                    <strong>{c.nombreUsuario}</strong>
                     {c.id === idPropio && (
                       <span className="etiqueta">Usted</span>
                     )}
+                    <span className="secundario">
+                      {c.email ?? 'Sin correo de Google'}
+                    </span>
                   </td>
                   <td>{NOMBRE_ROL[c.rol]}</td>
-                  <td>{c.email ?? '—'}</td>
                   <td>
                     <span className={`estado ${c.activo ? 'ok' : 'apagado'}`}>
                       {c.activo ? 'Activa' : 'Deshabilitada'}

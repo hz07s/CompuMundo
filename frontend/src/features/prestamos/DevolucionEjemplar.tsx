@@ -61,11 +61,12 @@ export default function DevolucionEjemplar() {
 
   return (
     <section className="formulario" aria-label="Devolución de ejemplar">
-      <h2>Código del ejemplar</h2>
+      <h2>Ejemplar entregado</h2>
+      <label htmlFor="codigo-devolucion">Código del ejemplar</label>
       <form onSubmit={buscar} noValidate className="fila-autor">
         <input
           ref={campoCodigo}
-          aria-label="Código del ejemplar"
+          id="codigo-devolucion"
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
           placeholder="CEDIS-2026-000001"
@@ -100,8 +101,11 @@ export default function DevolucionEjemplar() {
             pactada: {formatearFecha(prestamo.fechaDevolucion)}
           </p>
           {prestamo.estado === 'VENCIDO' && (
-            <p className="alerta" role="status">
-              Vencido
+            <p role="status">
+              <span className="estado critico">Vencido</span>{' '}
+              <span className="ayuda">
+                La devolución quedará registrada con atraso.
+              </span>
             </p>
           )}
           <button

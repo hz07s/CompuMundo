@@ -35,9 +35,10 @@ export default function SeleccionEjemplar({ ejemplar, onConsultado }: Props) {
   return (
     <section className="formulario" aria-label="Selección del ejemplar">
       <h2>2. Seleccionar el ejemplar</h2>
+      <label htmlFor="codigo-prestamo">Código del ejemplar</label>
       <form onSubmit={consultar} noValidate className="fila-autor">
         <input
-          aria-label="Código del ejemplar"
+          id="codigo-prestamo"
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
           placeholder="CEDIS-2026-000001"
