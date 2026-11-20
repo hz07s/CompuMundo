@@ -6,6 +6,7 @@ import { ROLES_POR_RUTA, RUTAS } from './features/auth/rutas'
 import AccesoDenegadoPage from './pages/AccesoDenegadoPage'
 import UsuariosPage from './pages/admin/UsuariosPage'
 import CatalogoPage from './pages/CatalogoPage'
+import DevolucionPage from './pages/DevolucionPage'
 import LectoresPage from './pages/LectoresPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -32,6 +33,12 @@ export const rutas: RouteObject[] = [
           {
             element: <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.lectores]} />,
             children: [{ path: RUTAS.lectores, element: <LectoresPage /> }],
+          },
+          {
+            element: (
+              <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.devolucion]} />
+            ),
+            children: [{ path: RUTAS.devolucion, element: <DevolucionPage /> }],
           },
           {
             element: <ProtectedRoute roles={ROLES_POR_RUTA[RUTAS.prestamos]} />,

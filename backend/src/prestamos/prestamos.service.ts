@@ -4,15 +4,24 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
 import type { UsuarioAutenticado } from '../auth/auth.types';
 import { Ejemplar, EstadoEjemplar } from '../catalogo/entities/ejemplar.entity';
 import { Obra } from '../catalogo/entities/obra.entity';
 import { enmascararDni } from '../common/utils/dni';
 import { Lector } from '../lectores/entities/lector.entity';
 import { DiasHabilesService, hoyEnLima } from './dias-habiles.service';
-import { CrearPrestamoDto, PrestamoResponseDto } from './dto/prestamo.dto';
-import { EstadoPrestamo, Prestamo } from './entities/prestamo.entity';
+import {
+  CrearPrestamoDto,
+  DevolucionResponseDto,
+  PrestamoActivoDto,
+  PrestamoResponseDto,
+} from './dto/prestamo.dto';
+import {
+  ESTADOS_ACTIVOS,
+  EstadoPrestamo,
+  Prestamo,
+} from './entities/prestamo.entity';
 import {
   EstadoMorosidad,
   MorosidadService,
@@ -116,6 +125,88 @@ export class PrestamosService {
       },
       creadoEn: prestamo.creadoEn,
     };
+  }
+
+  /**
+   * HU-005 · Busca el préstamo activo (Vigente o Vencido) de un ejemplar por su
+   * código, que es lo que el Bibliotecario escanea al recibirlo.
+   */
+  async buscarActivoPorEjemplar(
+    codigoEjemplar: string,
+  ): Promise<PrestamoActivoDto> {
+    const codigo = codigoEjemplar.trim().toUpperCase();
+    const prestamo = await this.dataSource.getRepository(Prestamo).findOne({
+      where: { ejemplar: { codigo }, estado: In(ESTADOS_ACTIVOS) },
+      relations: { ejemplar: { obra: true }, lector: true },
+    });
+    if (!prestamo?.ejemplar?.obra || !prestamo.lector) {
+      throw new NotFoundException(
+        'No hay un préstamo activo para ese ejemplar',
+      );
+    }
+    return {
+      id: prestamo.id,
+      estado: prestamo.estado,
+      fechaPrestamo: prestamo.fechaPrestamo,
+      fechaDevolucion: prestamo.fechaDevolucion,
+      ejemplar: {
+        codigo: prestamo.ejemplar.codigo,
+        titulo: prestamo.ejemplar.obra.titulo,
+      },
+      lector: {
+        nombres: prestamo.lector.nombres,
+        apellidos: prestamo.lector.apellidos,
+        dni: enmascararDni(prestamo.lector.dni),
+      },
+    };
+  }
+
+  /**
+   * HU-005 · Registra la devolución en una transacción: el préstamo debe estar
+   * activo (409 si ya fue devuelto), pasa a Devuelto con la fecha de hoy en Lima
+   * y el ejemplar vuelve a estar disponible. Al salir de Vigente/Vencido se
+   * libera solo el índice de RN-08. La disponibilidad de la obra se calcula
+   * desde los ejemplares, así que aumenta en 1 sin contador aparte.
+   */
+  async registrarDevolucion(
+    id: string,
+    usuario: UsuarioAutenticado,
+    ahora: Date = new Date(),
+  ): Promise<DevolucionResponseDto> {
+    return this.dataSource.transaction(async (manager) => {
+      const prestamo = await manager.findOne(Prestamo, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!prestamo) throw new NotFoundException('Préstamo no encontrado');
+      if (!ESTADOS_ACTIVOS.includes(prestamo.estado)) {
+        throw new ConflictException('El préstamo ya fue devuelto');
+      }
+
+      const fechaDevuelto = hoyEnLima(ahora);
+      await manager.update(Prestamo, prestamo.id, {
+        estado: EstadoPrestamo.DEVUELTO,
+        fechaDevuelto,
+        actualizadoPor: usuario.id,
+      });
+      await manager.update(Ejemplar, prestamo.ejemplarId, {
+        estado: EstadoEjemplar.DISPONIBLE,
+        actualizadoPor: usuario.id,
+      });
+      const ejemplar = await manager.findOneByOrFail(Ejemplar, {
+        id: prestamo.ejemplarId,
+      });
+      const obra = await manager.findOneByOrFail(Obra, { id: ejemplar.obraId });
+
+      return {
+        id: prestamo.id,
+        estado: EstadoPrestamo.DEVUELTO,
+        fechaDevuelto,
+        // RN-02: tardía si se devuelve después de la fecha pactada.
+        conAtraso: fechaDevuelto > prestamo.fechaDevolucion,
+        ejemplar: { codigo: ejemplar.codigo, titulo: obra.titulo },
+      };
+    });
   }
 
   /** RN-02: bloquea, o exige la justificación escrita si hay advertencia; si no, no guarda ninguna. */

@@ -9,22 +9,26 @@ import { DesbloqueoLector } from './entities/desbloqueo-lector.entity';
 import { Prestamo } from './entities/prestamo.entity';
 import { MorosidadService } from './morosidad.service';
 import { ReglasPrestamoService } from './reglas-prestamo.service';
+import { VencidosController } from './vencidos.controller';
+import { VencidosService } from './vencidos.service';
 
 /** Préstamos y devoluciones (HU-004, HU-005, HU-008) */
 @Module({
   imports: [TypeOrmModule.forFeature([Prestamo, DesbloqueoLector, Lector])],
-  controllers: [PrestamosController, DesbloqueosController],
+  controllers: [PrestamosController, DesbloqueosController, VencidosController],
   providers: [
     PrestamosService,
     DiasHabilesService,
     ReglasPrestamoService,
     MorosidadService,
+    VencidosService,
   ],
   exports: [
     TypeOrmModule,
     DiasHabilesService,
     ReglasPrestamoService,
     MorosidadService,
+    VencidosService,
   ],
 })
 export class PrestamosModule {}

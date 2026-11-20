@@ -1,10 +1,21 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiForbiddenResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -13,7 +24,13 @@ import type { UsuarioAutenticado } from '../auth/auth.types';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UsuarioActual } from '../auth/decorators/usuario-actual.decorator';
 import { Rol } from '../usuarios/rol.enum';
-import { CrearPrestamoDto, PrestamoResponseDto } from './dto/prestamo.dto';
+import {
+  BuscarPrestamoActivoQueryDto,
+  CrearPrestamoDto,
+  DevolucionResponseDto,
+  PrestamoActivoDto,
+  PrestamoResponseDto,
+} from './dto/prestamo.dto';
 import { PrestamosService } from './prestamos.service';
 
 @ApiTags('prestamos')
@@ -47,5 +64,41 @@ export class PrestamosController {
     @UsuarioActual() usuario: UsuarioAutenticado,
   ): Promise<PrestamoResponseDto> {
     return this.prestamos.registrar(dto, usuario);
+  }
+
+  @Get('activo')
+  @ApiOperation({
+    summary: 'Buscar el préstamo activo de un ejemplar',
+    description:
+      'Por el código del ejemplar (HU-005). Devuelve el préstamo Vigente o Vencido con la obra y el lector (DNI enmascarado).',
+  })
+  @ApiOkResponse({ type: PrestamoActivoDto })
+  @ApiBadRequestResponse({ description: 'Falta el código del ejemplar' })
+  @ApiForbiddenResponse({ description: 'Solo el Bibliotecario' })
+  @ApiNotFoundResponse({
+    description: 'El ejemplar no tiene un préstamo activo',
+  })
+  buscarActivo(
+    @Query() query: BuscarPrestamoActivoQueryDto,
+  ): Promise<PrestamoActivoDto> {
+    return this.prestamos.buscarActivoPorEjemplar(query.codigoEjemplar);
+  }
+
+  @Patch(':id/devolucion')
+  @ApiOperation({
+    summary: 'Registrar la devolución de un préstamo',
+    description:
+      'HU-005: el préstamo pasa a Devuelto con la fecha real, el ejemplar vuelve a estar disponible y se guarda el usuario responsable.',
+  })
+  @ApiOkResponse({ type: DevolucionResponseDto })
+  @ApiBadRequestResponse({ description: 'Identificador inválido' })
+  @ApiForbiddenResponse({ description: 'Solo el Bibliotecario' })
+  @ApiNotFoundResponse({ description: 'El préstamo no existe' })
+  @ApiConflictResponse({ description: 'El préstamo ya fue devuelto' })
+  devolver(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @UsuarioActual() usuario: UsuarioAutenticado,
+  ): Promise<DevolucionResponseDto> {
+    return this.prestamos.registrarDevolucion(id, usuario);
   }
 }
