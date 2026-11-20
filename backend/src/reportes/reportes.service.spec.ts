@@ -57,6 +57,22 @@ describe('ReportesService.morosidad (HU-006, ST-34)', () => {
     });
   });
 
+  it('HU-006 #2/#3: con el mismo atraso desempata por código del ejemplar (D-05)', async () => {
+    const { servicio } = crear([
+      prestamo('CEDIS-2026-000003', '2026-11-12'),
+      prestamo('CEDIS-2026-000001', '2026-11-12'),
+      prestamo('CEDIS-2026-000009', '2026-11-05'),
+      prestamo('CEDIS-2026-000002', '2026-11-12'),
+    ]);
+    const r = await servicio.morosidad(ahora);
+    expect(r.filas.map((f) => f.codigoEjemplar)).toEqual([
+      'CEDIS-2026-000009',
+      'CEDIS-2026-000001',
+      'CEDIS-2026-000002',
+      'CEDIS-2026-000003',
+    ]);
+  });
+
   it('HU-006 #4: el DNI sale siempre enmascarado', async () => {
     const { servicio } = crear([prestamo('A', '2026-11-10', '12345678')]);
     const r = await servicio.morosidad(ahora);

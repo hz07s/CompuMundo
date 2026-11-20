@@ -13,3 +13,17 @@ Hallazgos de la revisión de cierre (rama `fix/cierre-sprint-3`) que **no** se c
 | D-07 | El marcado masivo no registra `actualizadoPor` (excepción documentada en `docs/decisiones.md`). | Bajo: la auditoría no distingue cron, arranque o reporte. | Usuario técnico "SISTEMA" o columna de origen, si el PO lo pide. | 1 |
 | D-08 | `@nestjs/schedule` está fijado en v6 (la v12 es solo ESM). | Bajo: queda sin actualizaciones de seguridad a futuro. | Evaluar Jest con ESM o migrar a Vitest en el backend. | 2 |
 | D-09 | `test/reportes.e2e-spec.ts` no compila con `tsc --noEmit` (el `Buffer` de supertest frente al de `exceljs`); ts-jest lo ejecuta igual. | Bajo: ruido en el IDE. | Cast a `ArrayBuffer`, como en `exportadores.spec.ts`. | 0,5 |
+
+## Estado al 20/11/2026 (rama `fix/deuda-sprint-3`)
+
+| # | Estado | Cómo se resolvió |
+| --- | --- | --- |
+| D-01 | Resuelto | e2e `HU-005 #5 … (D-01)`: retiene la fila con `FOR UPDATE` para forzar la carrera; falla si se quita `pessimistic_write`. |
+| D-02 | Resuelto | `reportesApi` parsea el cuerpo `Blob` del error y la pantalla muestra el mensaje del servidor. |
+| D-03 | Resuelto | `revokeObjectURL` en un `setTimeout` después del `click()`. |
+| D-04 | Resuelto | `<caption>` y `scope="col"` en la tabla del reporte. |
+| D-05 | Resuelto | Desempate por código del ejemplar en `ReportesService.morosidad()`. |
+| D-06 | Resuelto | Los e2e usan su propia BD (`DATABASE_URL_TEST` o `<bd>_test`, creada por `test/global-setup.ts`); e2e de HU-006 #5 en `reportes-vacio.e2e-spec.ts`. |
+| D-07 | **Pendiente del PO** | `docs/decisiones.md` documenta la excepción a DoD-7; solo se implementa si el PO la pide en la Review 3. |
+| D-08 | Resuelto | `@nestjs/schedule` v12 con transformación en Jest ([ADR-019](adr/ADR-019-nestjs-schedule-esm.md)). |
+| D-09 | Resuelto | Cast a `ArrayBuffer`; el CI ahora corre `npm run typecheck`, que incluye `test/`. |

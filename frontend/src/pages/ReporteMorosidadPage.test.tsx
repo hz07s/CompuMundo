@@ -73,6 +73,64 @@ describe('ReporteMorosidadPage (HU-006, ST-37)', () => {
     expect(reportesApi.morosidadPdf).toHaveBeenCalledOnce()
   })
 
+  it('D-04: la tabla tiene título accesible y encabezados de columna', async () => {
+    vi.mocked(reportesApi.morosidad).mockResolvedValue(conDatos)
+    render(<ReporteMorosidadPage />)
+    const tabla = await screen.findByRole('table', {
+      name: 'Préstamos vencidos (1)',
+    })
+    expect(tabla).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'DNI' })).toHaveAttribute(
+      'scope',
+      'col',
+    )
+  })
+
+  it('D-03: revoca la URL del archivo después del click, no antes', async () => {
+    vi.mocked(reportesApi.morosidad).mockResolvedValue(conDatos)
+    vi.mocked(reportesApi.morosidadExcel).mockResolvedValue(new Blob(['x']))
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    // Una microtarea corre justo después del código síncrono del click: si la
+    // URL ya se revocó para entonces, la descarga podría cancelarse.
+    let revocadaEnElMismoCiclo: boolean | undefined
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {
+        queueMicrotask(() => {
+          revocadaEnElMismoCiclo =
+            vi.mocked(URL.revokeObjectURL).mock.calls.length > 0
+        })
+      })
+    const user = userEvent.setup()
+    render(<ReporteMorosidadPage />)
+    await user.click(
+      await screen.findByRole('button', { name: 'Exportar Excel' }),
+    )
+    expect(click).toHaveBeenCalledOnce()
+    expect(revocadaEnElMismoCiclo).toBe(false)
+    await vi.waitFor(() =>
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:x'),
+    )
+    click.mockRestore()
+  })
+
+  it('D-02: si la descarga falla muestra el mensaje del servidor', async () => {
+    vi.mocked(reportesApi.morosidad).mockResolvedValue(conDatos)
+    vi.mocked(reportesApi.morosidadPdf).mockRejectedValue(
+      Object.assign(new Error('x'), {
+        isAxiosError: true,
+        response: { status: 401, data: { message: 'Sesión vencida' } },
+      }),
+    )
+    const user = userEvent.setup()
+    render(<ReporteMorosidadPage />)
+    await user.click(
+      await screen.findByRole('button', { name: 'Exportar PDF' }),
+    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sesión vencida')
+  })
+
   it('HU-006: muestra "Cargando" y luego el error si la consulta falla', async () => {
     vi.mocked(reportesApi.morosidad).mockRejectedValue(new Error('x'))
     render(<ReporteMorosidadPage />)

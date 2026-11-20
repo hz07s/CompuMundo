@@ -123,7 +123,7 @@ describe('HU-006 Reporte de morosidad (e2e)', () => {
       `morosidad-${hoyEnLima()}.xlsx`,
     );
     const libro = new ExcelJS.Workbook();
-    await libro.xlsx.load(res.body as Buffer);
+    await libro.xlsx.load(res.body as ArrayBuffer);
     const hoja = libro.getWorksheet('Morosidad')!;
     const pantalla = (await get('/reportes/morosidad', tokenBiblio))
       .body as Reporte;

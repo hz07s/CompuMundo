@@ -18,12 +18,13 @@ Backend (`cd backend`):
 npm run start:dev                 # API en :3000 (Swagger en /api/docs, health en /health)
 npm run build
 npm run lint:ci                   # ESLint sin warnings, como en CI (`lint` aplica --fix)
+npm run typecheck                 # tsc --noEmit de src y test (ts-jest no revisa los e2e)
 npm run format:check              # Prettier
 npm test                          # unitarias (src/**/*.spec.ts)
 npx jest src/prestamos/morosidad.service.spec.ts      # un archivo
 npx jest -t "HU-001 #2"                                # por nombre de prueba
 npm run test:cov                  # cobertura: falla bajo 70 % global u 85 % en src/auth
-npm run test:e2e                  # e2e (test/*.e2e-spec.ts), necesita PostgreSQL arriba
+npm run test:e2e                  # e2e (test/*.e2e-spec.ts) en la BD <bd>_test, necesita PostgreSQL arriba
 npx jest --config ./test/jest-e2e.json --runInBand test/prestamos.e2e-spec.ts   # un e2e
 npm run migration:generate -- src/database/migrations/NombreCambio
 npm run migration:run / migration:revert
@@ -41,7 +42,7 @@ npm test                          # vitest run
 npx vitest run src/pages/LoginPage.test.tsx           # un archivo
 ```
 
-CI (`.github/workflows/ci.yml`) corre: backend build → Prettier → ESLint → cobertura → migraciones → e2e; frontend Prettier → ESLint → Vitest → build. Antes de dar algo por terminado, ejecutar los equivalentes locales.
+CI (`.github/workflows/ci.yml`) corre: backend build → Prettier → ESLint → tipos (`typecheck`) → cobertura → migraciones → e2e; frontend Prettier → ESLint → Vitest → build. Antes de dar algo por terminado, ejecutar los equivalentes locales.
 
 ### Trampa del `.env`
 
@@ -64,7 +65,7 @@ CI (`.github/workflows/ci.yml`) corre: backend build → Prettier → ESLint →
 
 ### Pruebas e2e
 
-`test/utils/create-test-app.ts` levanta el `AppModule` completo contra la BD de `DATABASE_URL`, aplica migraciones y acepta un callback para sobrescribir proveedores (p. ej. `DNI_VALIDATOR`). `test/utils/usuarios-de-prueba.ts` crea usuarios por rol y obtiene sus tokens. Las pruebas comparten la BD de desarrollo y limpian sus propios datos; corren con `--runInBand`.
+`test/utils/create-test-app.ts` levanta el `AppModule` completo contra la BD de pruebas, aplica migraciones y acepta un callback para sobrescribir proveedores (p. ej. `DNI_VALIDATOR`). `test/utils/usuarios-de-prueba.ts` crea usuarios por rol y obtiene sus tokens. Los e2e **no** usan la BD de desarrollo: `test/utils/bd-de-pruebas.ts` toma `DATABASE_URL_TEST` o, si no existe, la de `DATABASE_URL` con sufijo `_test` (p. ej. `compumundo_test`), y `test/global-setup.ts` la crea si falta. Cada suite limpia sus datos; corren con `--runInBand`. Una suite que necesite vaciar tablas debe verificar antes que `current_database()` termina en `_test` (ver `reportes-vacio.e2e-spec.ts`).
 
 ## Arquitectura del frontend
 
