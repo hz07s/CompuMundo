@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header, StreamableFile } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -10,6 +10,8 @@ import {
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../usuarios/rol.enum';
 import { MorosidadResponseDto } from './dto/morosidad.dto';
+import { CONTENT_TYPE_XLSX, generarExcelMorosidad } from './exportadores/excel';
+import { hoyEnLima } from '../prestamos/dias-habiles.service';
 import { ReportesService } from './reportes.service';
 
 @ApiTags('reportes')
@@ -30,5 +32,22 @@ export class ReportesController {
   @ApiOkResponse({ type: MorosidadResponseDto })
   morosidad(): Promise<MorosidadResponseDto> {
     return this.reportes.morosidad();
+  }
+
+  @Get('morosidad.xlsx')
+  @Header('Content-Type', CONTENT_TYPE_XLSX)
+  @ApiOperation({
+    summary: 'Exportar el reporte de morosidad a Excel (HU-006 #2)',
+    description: 'Mismo contenido que GET /reportes/morosidad.',
+  })
+  @ApiOkResponse({ description: 'Archivo .xlsx' })
+  async morosidadExcel(): Promise<StreamableFile> {
+    const archivo = await generarExcelMorosidad(
+      await this.reportes.morosidad(),
+    );
+    return new StreamableFile(archivo, {
+      type: CONTENT_TYPE_XLSX,
+      disposition: `attachment; filename="morosidad-${hoyEnLima()}.xlsx"`,
+    });
   }
 }
