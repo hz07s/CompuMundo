@@ -48,7 +48,7 @@ describe('HU-005 Devolución y vencidos (e2e)', () => {
        VALUES ($1, $2, $3, $4, $5) RETURNING id`,
       [lectorId, ejemplarId, diaRelativo(-10), fechaDevolucion, estado],
     );
-    return { id, codigo, ejemplarId, dni };
+    return { id, codigo, ejemplarId, dni, lectorId };
   };
 
   const estadoDe = async (id: string) =>
@@ -116,6 +116,31 @@ describe('HU-005 Devolución y vencidos (e2e)', () => {
       [p.ejemplarId],
     );
     expect(ej.estado).toBe('DISPONIBLE');
+
+    // Usuario responsable y marca temporal (DoD-7).
+    const [auditoria] = await dataSource.query<
+      Array<{ actualizado_por: string | null; reciente: boolean }>
+    >(
+      `SELECT actualizado_por, actualizado_en > now() - interval '1 minute' AS reciente
+       FROM prestamos WHERE id = $1`,
+      [p.id],
+    );
+    expect(auditoria.actualizado_por).not.toBeNull();
+    expect(auditoria.reciente).toBe(true);
+
+    // RN-08: el índice único ya no bloquea un nuevo préstamo activo del lector.
+    const [{ id: otroEjemplar }]: Array<{ id: string }> =
+      await dataSource.query(
+        `INSERT INTO ejemplares (obra_id, codigo, estado) VALUES ($1, $2, 'PRESTADO') RETURNING id`,
+        [obraId, `${p.codigo}B`.slice(-20)],
+      );
+    await expect(
+      dataSource.query(
+        `INSERT INTO prestamos (lector_id, ejemplar_id, fecha_prestamo, fecha_devolucion, estado)
+         VALUES ($1, $2, $3, $3, 'VIGENTE')`,
+        [p.lectorId, otroEjemplar, hoyEnLima()],
+      ),
+    ).resolves.toBeDefined();
   });
 
   it('HU-005 #2: el marcado manual pasa a Vencido solo lo anterior a hoy (#8: hoy no se marca)', async () => {
