@@ -87,3 +87,57 @@ export class PrestamoResponseDto {
   @ApiProperty()
   creadoEn!: Date;
 }
+
+export class PrestamoActivoDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({
+    enum: [EstadoPrestamo.VIGENTE, EstadoPrestamo.VENCIDO],
+    enumName: 'EstadoPrestamo',
+  })
+  estado!: EstadoPrestamo;
+
+  @ApiProperty({ example: '2026-11-06', format: 'date' })
+  fechaPrestamo!: string;
+
+  @ApiProperty({ example: '2026-11-11', format: 'date' })
+  fechaDevolucion!: string;
+
+  @ApiProperty({ type: EjemplarPrestadoDto })
+  ejemplar!: EjemplarPrestadoDto;
+
+  @ApiProperty({ type: LectorPrestamoDto })
+  lector!: LectorPrestamoDto;
+}
+
+/** HU-005 · Resultado de registrar una devolución. */
+export class DevolucionResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: EstadoPrestamo, enumName: 'EstadoPrestamo' })
+  estado!: EstadoPrestamo;
+
+  @ApiProperty({ example: '2026-11-10', format: 'date' })
+  fechaDevuelto!: string;
+
+  @ApiProperty({
+    description: 'La devolución fue posterior a la fecha pactada (RN-02)',
+  })
+  conAtraso!: boolean;
+
+  @ApiProperty({ type: EjemplarPrestadoDto })
+  ejemplar!: EjemplarPrestadoDto;
+}
+
+export class BuscarPrestamoActivoQueryDto {
+  @ApiProperty({ example: 'CEDIS-2026-000001' })
+  @Trim()
+  @IsNotEmpty({ message: 'El código del ejemplar es obligatorio' })
+  @IsString({ message: 'El código del ejemplar debe ser texto' })
+  @MaxLength(20, {
+    message: 'El código del ejemplar admite hasta 20 caracteres',
+  })
+  codigoEjemplar!: string;
+}
