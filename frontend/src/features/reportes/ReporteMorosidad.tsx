@@ -59,8 +59,11 @@ export default function ReporteMorosidad() {
       {reporte && (
         <>
           <p>
-            Generado: {new Date(reporte.generadoEn).toLocaleString('es-PE')} ·
-            Total: {reporte.total}
+            Generado:{' '}
+            {new Date(reporte.generadoEn).toLocaleString('es-PE', {
+              timeZone: 'America/Lima',
+            })}{' '}
+            · Total: {reporte.total}
           </p>
           <button
             type="button"
@@ -84,12 +87,12 @@ export default function ReporteMorosidad() {
             <table>
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Título</th>
+                  <th>Código del ejemplar</th>
+                  <th>Título de la obra</th>
                   <th>Lector</th>
                   <th>DNI</th>
-                  <th>Préstamo</th>
-                  <th>Devolución pactada</th>
+                  <th>Fecha de préstamo</th>
+                  <th>Fecha de devolución pactada</th>
                   <th>Días de atraso</th>
                   <th>Registrado por</th>
                 </tr>

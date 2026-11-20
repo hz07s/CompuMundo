@@ -1,20 +1,13 @@
 import PDFDocument from 'pdfkit';
 import { MorosidadResponseDto } from '../dto/morosidad.dto';
+import {
+  COLUMNAS_MOROSIDAD,
+  lineaGenerado,
+  SIN_VENCIDOS,
+  TITULO_MOROSIDAD,
+} from './columnas';
 
 export const CONTENT_TYPE_PDF = 'application/pdf';
-
-const COLUMNAS = [
-  { titulo: 'Código', ancho: 100, valor: (f: Fila) => f.codigoEjemplar },
-  { titulo: 'Título', ancho: 170, valor: (f: Fila) => f.titulo },
-  { titulo: 'Lector', ancho: 130, valor: (f: Fila) => f.lector },
-  { titulo: 'DNI', ancho: 55, valor: (f: Fila) => f.dni },
-  { titulo: 'Préstamo', ancho: 60, valor: (f: Fila) => f.fechaPrestamo },
-  { titulo: 'Pactada', ancho: 60, valor: (f: Fila) => f.fechaDevolucion },
-  { titulo: 'Atraso', ancho: 40, valor: (f: Fila) => String(f.diasAtraso) },
-  { titulo: 'Registró', ancho: 70, valor: (f: Fila) => f.registradoPor ?? '—' },
-];
-
-type Fila = MorosidadResponseDto['filas'][number];
 
 /** HU-006 #3: tabla simple en A4 horizontal con las mismas filas que la pantalla. */
 export function generarPdfMorosidad(
@@ -31,42 +24,43 @@ export function generarPdfMorosidad(
     doc.on('end', () => resolve(Buffer.concat(trozos)));
     doc.on('error', reject);
 
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(14)
-      .text('Reporte de morosidad · CompuMundo CEDIS');
-    doc
-      .font('Helvetica')
-      .fontSize(9)
-      .text(`Generado: ${reporte.generadoEn} · Total: ${reporte.total}`);
+    doc.font('Helvetica-Bold').fontSize(14).text(TITULO_MOROSIDAD);
+    doc.font('Helvetica').fontSize(9).text(lineaGenerado(reporte));
     doc.moveDown();
 
     if (reporte.total === 0) {
-      doc.text('No hay préstamos vencidos');
+      doc.text(SIN_VENCIDOS);
     } else {
+      // Reparte el ancho útil en proporción a los anchos de Excel.
+      const util =
+        doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const suma = COLUMNAS_MOROSIDAD.reduce((s, c) => s + c.ancho, 0);
+      const anchos = COLUMNAS_MOROSIDAD.map((c) => (c.ancho * util) / suma);
+
       const fila = (celdas: string[], negrita: boolean) => {
+        const alto = negrita ? 22 : 13;
         if (doc.y > doc.page.height - 50) doc.addPage();
         const y = doc.y;
         let x = doc.page.margins.left;
         doc.font(negrita ? 'Helvetica-Bold' : 'Helvetica').fontSize(8);
         celdas.forEach((c, i) => {
           doc.text(c, x, y, {
-            width: COLUMNAS[i].ancho - 4,
-            height: 10,
-            lineBreak: false,
+            width: anchos[i] - 4,
+            height: alto - 2,
+            lineBreak: negrita,
             ellipsis: true,
           });
-          x += COLUMNAS[i].ancho;
+          x += anchos[i];
         });
-        doc.y = y + 13;
+        doc.y = y + alto;
       };
       fila(
-        COLUMNAS.map((c) => c.titulo),
+        COLUMNAS_MOROSIDAD.map((c) => c.encabezado),
         true,
       );
       for (const f of reporte.filas) {
         fila(
-          COLUMNAS.map((c) => c.valor(f)),
+          COLUMNAS_MOROSIDAD.map((c) => String(c.valor(f))),
           false,
         );
       }
