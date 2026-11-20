@@ -46,4 +46,12 @@ describe('VencidosService (HU-005, RN-06)', () => {
 
     await expect(servicio.marcar()).resolves.toBe(0);
   });
+
+  it('RN-06b: al arrancar recupera el marcado perdido y un fallo no tumba la app', async () => {
+    await servicio.onApplicationBootstrap();
+    expect(builder.execute).toHaveBeenCalledTimes(1);
+
+    builder.execute.mockRejectedValue(new Error('BD caída'));
+    await expect(servicio.onApplicationBootstrap()).resolves.toBeUndefined();
+  });
 });

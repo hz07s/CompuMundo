@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -14,7 +14,7 @@ export const CRON_MARCADO_VENCIDOS = '5 0 * * *';
  * vence hoy no se marca. Es idempotente: una segunda ejecución no cambia nada.
  */
 @Injectable()
-export class VencidosService {
+export class VencidosService implements OnApplicationBootstrap {
   private readonly logger = new Logger(VencidosService.name);
 
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
@@ -31,13 +31,29 @@ export class VencidosService {
     return resultado.affected ?? 0;
   }
 
+  /**
+   * RN-06b: si Railway reinicia o despierta el servidor después de las 00:05,
+   * el cron de ese día no corre; al arrancar se recupera la corrida perdida.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    await this.ejecutar('al arrancar');
+  }
+
   @Cron(CRON_MARCADO_VENCIDOS, { timeZone: 'America/Lima' })
   async marcarDiario(): Promise<void> {
+    await this.ejecutar('diario');
+  }
+
+  /** Nunca lanza: un fallo se registra y no tumba el arranque ni el cron. */
+  private async ejecutar(origen: string): Promise<void> {
     try {
       const marcados = await this.marcar();
-      this.logger.log(`Marcado diario de vencidos: ${marcados} préstamo(s)`);
+      this.logger.log(`Marcado ${origen} de vencidos: ${marcados} préstamo(s)`);
     } catch (error) {
-      this.logger.error('Falló el marcado diario de vencidos', String(error));
+      this.logger.error(
+        `Falló el marcado ${origen} de vencidos`,
+        String(error),
+      );
     }
   }
 }
