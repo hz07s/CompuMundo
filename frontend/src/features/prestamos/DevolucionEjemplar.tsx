@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { normalizarError } from '../../services/apiError'
 import { prestamosApi } from './prestamosApi'
 import {
@@ -19,6 +19,11 @@ export default function DevolucionEjemplar() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const campoCodigo = useRef<HTMLInputElement>(null)
+
+  // El campo está deshabilitado mientras se confirma: se enfoca al terminar.
+  useEffect(() => {
+    if (devuelto) campoCodigo.current?.focus()
+  }, [devuelto])
 
   async function buscar(e: FormEvent) {
     e.preventDefault()
@@ -47,7 +52,6 @@ export default function DevolucionEjemplar() {
       setDevuelto(await prestamosApi.devolver(prestamo.id))
       setPrestamo(null)
       setCodigo('')
-      campoCodigo.current?.focus()
     } catch (err) {
       setError(normalizarError(err).mensaje)
     } finally {
