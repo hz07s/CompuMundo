@@ -17,6 +17,8 @@ import { Rol } from './rol.enum';
 const UNIQUE_VIOLATION = '23505';
 export const NOMBRE_DUPLICADO = 'El nombre de usuario ya está registrado';
 export const CORREO_DUPLICADO = 'El correo ya está asociado a otra cuenta';
+export const ULTIMO_ADMINISTRADOR =
+  'Debe quedar al menos un Administrador activo';
 export const SIN_AUTOBLOQUEO =
   'No puede deshabilitar su propia cuenta ni quitarse el rol de Administrador';
 
@@ -25,8 +27,6 @@ export const SIN_AUTOBLOQUEO =
 export class UsuariosService {
   constructor(
     @InjectRepository(Usuario) private readonly usuarios: Repository<Usuario>,
-    @InjectRepository(RefreshToken)
-    private readonly refreshTokens: Repository<RefreshToken>,
     private readonly passwords: PasswordService,
   ) {}
 
@@ -78,39 +78,67 @@ export class UsuariosService {
   }
 
   /**
-   * HU-021 #3/#4: cambia rol, estado o contraseña. Al deshabilitar o cambiar
-   * la contraseña se revocan sus refresh tokens: no podrá renovar la sesión.
+   * HU-021 #3/#4: cambia rol, estado o contraseña. Cualquier cambio de estado,
+   * rol o contraseña revoca sus refresh tokens; el guard JWT ya lee el estado
+   * y el rol de la BD en cada petición, así que el corte es inmediato.
    */
   async actualizar(
     id: string,
     dto: ActualizarUsuarioDto,
     admin: UsuarioAutenticado,
   ): Promise<UsuarioResponseDto> {
-    const usuario = await this.usuarios.findOneBy({ id });
-    if (!usuario) throw new NotFoundException('Usuario no encontrado');
-
-    // Siempre queda al menos un Administrador activo: quien hace el cambio.
-    const seBloquea =
-      id === admin.id &&
-      (dto.activo === false ||
-        (dto.rol !== undefined && dto.rol !== Rol.ADMINISTRADOR));
-    if (seBloquea) throw new ConflictException(SIN_AUTOBLOQUEO);
-
-    const cambios: Partial<Usuario> = { actualizadoPor: admin.id };
-    if (dto.rol !== undefined) cambios.rol = dto.rol;
-    if (dto.activo !== undefined) cambios.activo = dto.activo;
-    if (dto.password !== undefined) {
-      cambios.passwordHash = await this.passwords.hash(dto.password);
+    const quitaAdministrador =
+      dto.activo === false ||
+      (dto.rol !== undefined && dto.rol !== Rol.ADMINISTRADOR);
+    if (id === admin.id && quitaAdministrador) {
+      throw new ConflictException(SIN_AUTOBLOQUEO);
     }
-    await this.usuarios.update(id, cambios);
+    const passwordHash =
+      dto.password === undefined
+        ? undefined
+        : await this.passwords.hash(dto.password);
 
-    if (dto.activo === false || dto.password !== undefined) {
-      await this.refreshTokens.update(
-        { usuarioId: id, revocadoEn: IsNull() },
-        { revocadoEn: new Date() },
-      );
-    }
-    return this.aRespuesta({ ...usuario, ...cambios });
+    return this.usuarios.manager.transaction(async (m) => {
+      const usuario = await m.findOne(Usuario, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+      // HU-021 #5: nunca queda el sistema sin un Administrador activo. Se
+      // bloquean todos los administradores activos para que dos bajas cruzadas
+      // simultáneas no pasen ambas la verificación.
+      if (
+        quitaAdministrador &&
+        usuario.activo &&
+        usuario.rol === Rol.ADMINISTRADOR
+      ) {
+        const activos = await m.find(Usuario, {
+          where: { rol: Rol.ADMINISTRADOR, activo: true },
+          order: { id: 'ASC' },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!activos.some((a) => a.id !== id)) {
+          throw new ConflictException(ULTIMO_ADMINISTRADOR);
+        }
+      }
+
+      const cambios: Partial<Usuario> = { actualizadoPor: admin.id };
+      if (dto.rol !== undefined) cambios.rol = dto.rol;
+      if (dto.activo !== undefined) cambios.activo = dto.activo;
+      if (passwordHash !== undefined) cambios.passwordHash = passwordHash;
+      await m.update(Usuario, id, cambios);
+
+      const cambiaRol = dto.rol !== undefined && dto.rol !== usuario.rol;
+      if (dto.activo === false || passwordHash !== undefined || cambiaRol) {
+        await m.update(
+          RefreshToken,
+          { usuarioId: id, revocadoEn: IsNull() },
+          { revocadoEn: new Date() },
+        );
+      }
+      return this.aRespuesta({ ...usuario, ...cambios });
+    });
   }
 
   private aRespuesta(u: Usuario): UsuarioResponseDto {

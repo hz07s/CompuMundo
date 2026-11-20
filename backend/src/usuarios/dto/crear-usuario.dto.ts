@@ -11,8 +11,9 @@ import {
 } from 'class-validator';
 import { Rol } from '../rol.enum';
 
-const recortar = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+/** Google entrega el correo en minúsculas y el login lo busca tal cual (HU-022). */
+const normalizarCorreo = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : value;
 
 /** Alta de una cuenta del personal por el Administrador (HU-021, RF-19). */
 export class CrearUsuarioDto {
@@ -47,7 +48,7 @@ export class CrearUsuarioDto {
     description: 'Correo de Google para iniciar sesión con SSO (HU-022)',
   })
   @IsOptional()
-  @Transform(recortar)
+  @Transform(normalizarCorreo)
   @IsEmail({}, { message: 'El correo no es válido' })
   @MaxLength(120, { message: 'El correo admite hasta 120 caracteres' })
   email?: string;

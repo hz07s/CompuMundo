@@ -9,6 +9,7 @@ import {
   CORREO_DUPLICADO,
   NOMBRE_DUPLICADO,
   SIN_AUTOBLOQUEO,
+  ULTIMO_ADMINISTRADOR,
   UsuariosService,
 } from './usuarios.service';
 
@@ -20,6 +21,24 @@ const admin: UsuarioAutenticado = {
 const creadoEn = new Date('2026-11-20T15:00:00Z');
 
 function crearServicio(existentes: Partial<Usuario>[] = []) {
+  // EntityManager de la transacción de `actualizar`.
+  const bd = {
+    findOne: jest.fn((_e: unknown, { where }: { where: { id: string } }) =>
+      Promise.resolve(existentes.find((u) => u.id === where.id) ?? null),
+    ),
+    find: jest.fn(
+      (_e: unknown, { where }: { where: { rol: Rol; activo: boolean } }) =>
+        Promise.resolve(
+          existentes.filter(
+            (u) => u.rol === where.rol && u.activo === where.activo,
+          ),
+        ),
+    ),
+    // Tipado (entidad, criterio, cambios) para leer las llamadas sin `any`.
+    update: jest.fn<Promise<{ affected: number }>, [unknown, unknown, unknown]>(
+      () => Promise.resolve({ affected: 1 }),
+    ),
+  };
   const repo = {
     find: jest.fn().mockResolvedValue(existentes),
     existsBy: jest.fn(({ nombreUsuario, email }: Partial<Usuario>) =>
@@ -31,25 +50,32 @@ function crearServicio(existentes: Partial<Usuario>[] = []) {
         ),
       ),
     ),
-    findOneBy: jest.fn(({ id }: { id: string }) =>
-      Promise.resolve(existentes.find((u) => u.id === id) ?? null),
-    ),
     create: jest.fn((u: Partial<Usuario>) => u),
     save: jest.fn((u: Partial<Usuario>) =>
       Promise.resolve({ id: 'nuevo', creadoEn, ...u }),
     ),
-    update: jest.fn().mockResolvedValue({ affected: 1 }),
+    manager: {
+      transaction: jest.fn((trabajo: (m: typeof bd) => Promise<unknown>) =>
+        trabajo(bd),
+      ),
+    },
   };
-  const tokens = { update: jest.fn().mockResolvedValue({ affected: 2 }) };
   const passwords = {
     hash: jest.fn((p: string) => Promise.resolve(`hash(${p})`)),
   };
   const servicio = new UsuariosService(
     repo as unknown as Repository<Usuario>,
-    tokens as unknown as Repository<RefreshToken>,
     passwords as unknown as PasswordService,
   );
-  return { servicio, repo, tokens, passwords };
+  /** Llamadas a update sobre la tabla de refresh tokens (revocaciones). */
+  const revocaciones = () =>
+    bd.update.mock.calls.filter(([entidad]) => entidad === RefreshToken);
+  /** Cambios aplicados a la cuenta `id`. */
+  const cambiosDe = (id: string) =>
+    bd.update.mock.calls
+      .filter(([entidad, clave]) => entidad === Usuario && clave === id)
+      .map(([, , cambios]) => cambios as Partial<Usuario>);
+  return { servicio, repo, bd, passwords, revocaciones, cambiosDe };
 }
 
 const biblio: Partial<Usuario> = {
@@ -173,37 +199,39 @@ describe('UsuariosService (HU-021)', () => {
   });
 
   it('HU-021 #3: deshabilitar la cuenta revoca sus refresh tokens', async () => {
-    const { servicio, repo, tokens } = crearServicio([biblio]);
+    const { servicio, revocaciones, cambiosDe } = crearServicio([biblio]);
 
     const r = await servicio.actualizar('biblio-1', { activo: false }, admin);
 
-    expect(repo.update).toHaveBeenCalledWith('biblio-1', {
-      activo: false,
-      actualizadoPor: 'admin-1',
-    });
-    expect(tokens.update).toHaveBeenCalledWith(
-      expect.objectContaining({ usuarioId: 'biblio-1' }),
-      { revocadoEn: expect.any(Date) as Date },
-    );
+    expect(cambiosDe('biblio-1')).toEqual([
+      { activo: false, actualizadoPor: 'admin-1' },
+    ]);
+    expect(revocaciones()).toHaveLength(1);
+    expect(revocaciones()[0][1]).toMatchObject({ usuarioId: 'biblio-1' });
     expect(r.activo).toBe(false);
   });
 
-  it('HU-021 #4: cambiar rol no revoca sesiones; cambiar contraseña sí y la hashea', async () => {
-    const { servicio, repo, tokens } = crearServicio([biblio]);
+  it('HU-021 #4: cambiar rol o contraseña revoca sesiones; reactivar no', async () => {
+    const { servicio, revocaciones, cambiosDe } = crearServicio([
+      { ...biblio, activo: false },
+    ]);
+
+    await servicio.actualizar('biblio-1', { activo: true }, admin);
+    expect(revocaciones()).toHaveLength(0);
 
     await servicio.actualizar('biblio-1', { rol: Rol.ADMINISTRADOR }, admin);
-    expect(tokens.update).not.toHaveBeenCalled();
+    expect(revocaciones()).toHaveLength(1);
 
     await servicio.actualizar('biblio-1', { password: 'nueva-clave' }, admin);
-    expect(repo.update).toHaveBeenLastCalledWith('biblio-1', {
+    expect(cambiosDe('biblio-1').at(-1)).toEqual({
       passwordHash: 'hash(nueva-clave)',
       actualizadoPor: 'admin-1',
     });
-    expect(tokens.update).toHaveBeenCalledTimes(1);
+    expect(revocaciones()).toHaveLength(2);
   });
 
   it('HU-021 #5: el Administrador no puede deshabilitarse ni quitarse el rol → 409', async () => {
-    const { servicio, repo } = crearServicio([
+    const { servicio, bd } = crearServicio([
       { ...biblio, id: 'admin-1', rol: Rol.ADMINISTRADOR },
     ]);
 
@@ -213,12 +241,43 @@ describe('UsuariosService (HU-021)', () => {
     await expect(
       servicio.actualizar('admin-1', { rol: Rol.BIBLIOTECARIO }, admin),
     ).rejects.toThrow(SIN_AUTOBLOQUEO);
-    expect(repo.update).not.toHaveBeenCalled();
+    expect(bd.update).not.toHaveBeenCalled();
 
     // Sí puede cambiar su propia contraseña.
     await expect(
       servicio.actualizar('admin-1', { password: 'nueva-clave' }, admin),
     ).resolves.toMatchObject({ id: 'admin-1' });
+  });
+
+  it('HU-021 #5: no se puede deshabilitar ni degradar al último otro Administrador activo', async () => {
+    // Quien actúa ya no figura como Administrador activo en la BD (p. ej. lo
+    // deshabilitaron en paralelo): el otro es el último y debe conservarse.
+    const { servicio, bd } = crearServicio([
+      { ...biblio, id: 'admin-2', rol: Rol.ADMINISTRADOR },
+    ]);
+
+    await expect(
+      servicio.actualizar('admin-2', { activo: false }, admin),
+    ).rejects.toThrow(new ConflictException(ULTIMO_ADMINISTRADOR));
+    await expect(
+      servicio.actualizar('admin-2', { rol: Rol.BIBLIOTECARIO }, admin),
+    ).rejects.toThrow(ULTIMO_ADMINISTRADOR);
+    expect(bd.update).not.toHaveBeenCalled();
+    expect(bd.find).toHaveBeenCalledWith(
+      Usuario,
+      expect.objectContaining({ lock: { mode: 'pessimistic_write' } }),
+    );
+  });
+
+  it('HU-021 #5: con otro Administrador activo sí se puede deshabilitar', async () => {
+    const { servicio, cambiosDe } = crearServicio([
+      { ...biblio, id: 'admin-1', rol: Rol.ADMINISTRADOR },
+      { ...biblio, id: 'admin-2', rol: Rol.ADMINISTRADOR },
+    ]);
+
+    await servicio.actualizar('admin-2', { activo: false }, admin);
+
+    expect(cambiosDe('admin-2')).toHaveLength(1);
   });
 
   it('HU-021: cuenta inexistente → 404', async () => {

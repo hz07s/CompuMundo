@@ -13,10 +13,12 @@ Según ADR-015, el trabajo no planificado se presenta al PO antes de integrarse.
   - `POST /usuarios` (alta con contraseña inicial y correo opcional para Google);
   - `PATCH /usuarios/:id` (rol, deshabilitar o reactivar, nueva contraseña);
   - la pantalla *Usuarios* del Administrador.
-- Deshabilitar una cuenta o cambiarle la contraseña revoca sus refresh tokens.
-- El Administrador no puede deshabilitarse ni quitarse el rol a sí mismo: así siempre queda al menos un Administrador activo.
+- Deshabilitar una cuenta, cambiarle el rol o la contraseña revoca sus refresh tokens.
+- `JwtAuthGuard` consulta la cuenta en cada petición: una cuenta deshabilitada recibe 401 al instante, y el rol que vale es el de la BD, no el que quedó en el access token.
+- El Administrador no puede deshabilitarse ni quitarse el rol a sí mismo, ni cambiar su propia contraseña desde la pantalla. Además, nunca se puede deshabilitar ni degradar al último Administrador activo: la verificación bloquea las filas (`pessimistic_write`) para que dos bajas cruzadas no pasen a la vez.
+- El correo se guarda en minúsculas, igual que lo entrega Google (HU-022).
 - Auditoría (DoD-7): columnas `creado_por` y `actualizado_por` en `usuarios`.
 
 ## Consecuencias
-- Un access token ya emitido sigue siendo válido hasta que vence (máximo 8 h), porque el guard JWT no consulta la BD. Si el PO exige un corte inmediato, se agrega la verificación de `activo` en `JwtAuthGuard`, con una consulta a la BD por cada petición.
+- Cada petición autenticada hace una consulta más a la BD, por clave primaria; con el volumen del CEDIS el costo es despreciable. A cambio, el corte de acceso es inmediato.
 - Si el PO no la aprueba, el PR se cierra sin fusionar y el Bibliotecario se sigue creando con `crear-bibliotecario.cjs`.

@@ -64,12 +64,15 @@ describe('HU-021 Cuentas del personal (e2e)', () => {
         nombreUsuario: `  E2E.Cuenta.${sufijo} `,
         password: clave,
         rol: 'BIBLIOTECARIO',
+        email: ` E2E.Cuenta.${sufijo}@Unsa.Edu.Pe `,
       })
       .expect(201);
     cuenta = res.body as Cuenta;
 
     expect(cuenta).toMatchObject({
       nombreUsuario: nombre,
+      // Minúsculas, como lo entrega Google (HU-022).
+      email: `${nombre}@unsa.edu.pe`,
       rol: 'BIBLIOTECARIO',
       activo: true,
     });
@@ -90,6 +93,15 @@ describe('HU-021 Cuentas del personal (e2e)', () => {
     await comoAdmin(http().post('/usuarios'))
       .send({ nombreUsuario: nombre, password: clave, rol: 'BIBLIOTECARIO' })
       .expect(409);
+    // El mismo correo con otras mayúsculas también es repetido.
+    await comoAdmin(http().post('/usuarios'))
+      .send({
+        nombreUsuario: `otro.${sufijo}`,
+        password: clave,
+        rol: 'BIBLIOTECARIO',
+        email: `${nombre.toUpperCase()}@UNSA.EDU.PE`,
+      })
+      .expect(409);
 
     const res = await comoAdmin(http().post('/usuarios'))
       .send({ nombreUsuario: 'a b', password: 'corta', rol: 'LECTOR' })
@@ -102,8 +114,14 @@ describe('HU-021 Cuentas del personal (e2e)', () => {
     ]);
   });
 
-  it('HU-021 #3: deshabilitar la cuenta impide el login y revoca la renovación de sesión', async () => {
-    const cookie = cookieDe(await login(clave).expect(200));
+  it('HU-021 #3: deshabilitar la cuenta impide el login, la renovación y corta el token vigente', async () => {
+    const sesion = await login(clave).expect(200);
+    const cookie = cookieDe(sesion);
+    const token = (sesion.body as { accessToken: string }).accessToken;
+    await http()
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
     const res = await comoAdmin(http().patch(`/usuarios/${cuenta.id}`))
       .send({ activo: false })
@@ -112,6 +130,11 @@ describe('HU-021 Cuentas del personal (e2e)', () => {
     expect((res.body as Cuenta).activo).toBe(false);
     await login(clave).expect(401);
     await http().post('/auth/refresh').set('Cookie', cookie).expect(401);
+    // El access token aún no vence, pero la cuenta ya no está activa.
+    await http()
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(401);
     const [fila] = await dataSource.query<Array<{ actualizado_por: string }>>(
       'SELECT actualizado_por FROM usuarios WHERE id = $1',
       [cuenta.id],
