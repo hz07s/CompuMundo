@@ -3,7 +3,8 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
-  "setupFiles": ["dotenv/config"],
+  "globalSetup": "<rootDir>/global-setup.ts",
+  "setupFiles": ["<rootDir>/usar-bd-de-pruebas.ts"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }

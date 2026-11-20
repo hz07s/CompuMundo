@@ -53,7 +53,7 @@ Comprobaciones:
 | `npm run format` / `npm run format:check` | Prettier |
 | `npm test` | Pruebas unitarias |
 | `npm run test:cov` | Unitarias con cobertura; falla bajo 70 % global u 85 % en `src/auth` |
-| `npm run test:e2e` | Pruebas e2e (necesitan PostgreSQL arriba) |
+| `npm run test:e2e` | Pruebas e2e (necesitan PostgreSQL arriba; usan la BD `compumundo_test`, que se crea sola) |
 | `npm run migration:generate -- src/database/migrations/NombreCambio` | Genera una migración a partir de las entidades |
 | `npm run migration:create -- src/database/migrations/NombreCambio` | Crea una migración vacía |
 | `npm run migration:run` / `npm run migration:revert` | Aplica / revierte la última migración |
