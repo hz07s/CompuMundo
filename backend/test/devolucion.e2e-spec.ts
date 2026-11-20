@@ -180,6 +180,33 @@ describe('HU-005 Devolución y vencidos (e2e)', () => {
     await devolver(p.id).expect(409);
   });
 
+  it('HU-005 #5: dos devoluciones simultáneas del mismo préstamo → una 200 y otra 409 (D-01)', async () => {
+    const p = await prestar('VIGENTE', diaRelativo(2));
+
+    // Retenemos la fila para que ambas peticiones lleguen a la BD a la vez.
+    // Con pessimistic_write esperan y la segunda ve DEVUELTO; sin él, ambas
+    // leerían VIGENTE y responderían 200.
+    const retencion = dataSource.createQueryRunner();
+    await retencion.connect();
+    await retencion.startTransaction();
+    await retencion.query('SELECT id FROM prestamos WHERE id = $1 FOR UPDATE', [
+      p.id,
+    ]);
+    const enCurso = Promise.all([devolver(p.id), devolver(p.id)]);
+    await new Promise((r) => setTimeout(r, 500));
+    await retencion.commitTransaction();
+    await retencion.release();
+    const respuestas = await enCurso;
+
+    expect(respuestas.map((r) => r.status).sort()).toEqual([200, 409]);
+    expect((await estadoDe(p.id)).estado).toBe('DEVUELTO');
+    const [ej] = await dataSource.query<Array<{ estado: string }>>(
+      'SELECT estado FROM ejemplares WHERE id = $1',
+      [p.ejemplarId],
+    );
+    expect(ej.estado).toBe('DISPONIBLE');
+  });
+
   it('HU-005 #6: id o código inexistente → 404', async () => {
     await devolver('00000000-0000-4000-8000-000000000000').expect(404);
     await request(app.getHttpServer())
