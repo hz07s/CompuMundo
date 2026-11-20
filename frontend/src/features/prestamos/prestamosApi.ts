@@ -1,8 +1,10 @@
 import { api } from '../../services/api'
 import type {
+  DevolucionRegistrada,
   EjemplarConsulta,
   LectorVerificacion,
   NuevoPrestamo,
+  PrestamoActivo,
   PrestamoRegistrado,
 } from './types'
 
@@ -25,6 +27,21 @@ export const prestamosApi = {
 
   async registrar(prestamo: NuevoPrestamo) {
     const { data } = await api.post<PrestamoRegistrado>('/prestamos', prestamo)
+    return data
+  },
+
+  /** HU-005: préstamo activo (Vigente o Vencido) de un ejemplar, por su código. */
+  async buscarActivo(codigoEjemplar: string) {
+    const { data } = await api.get<PrestamoActivo>('/prestamos/activo', {
+      params: { codigoEjemplar },
+    })
+    return data
+  },
+
+  async devolver(prestamoId: string) {
+    const { data } = await api.patch<DevolucionRegistrada>(
+      `/prestamos/${prestamoId}/devolucion`,
+    )
     return data
   },
 

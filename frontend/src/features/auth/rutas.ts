@@ -7,6 +7,7 @@ export const RUTAS = {
   catalogo: '/catalogo',
   lectores: '/lectores',
   prestamos: '/prestamos',
+  devolucion: '/prestamos/devolucion',
 } as const
 
 /** Módulo al que llega cada rol después de iniciar sesión (HU-001 #1). */
@@ -20,6 +21,8 @@ export const ROLES_POR_RUTA: Record<string, Rol[]> = {
   [RUTAS.usuarios]: ['ADMINISTRADOR'],
   [RUTAS.catalogo]: ['BIBLIOTECARIO'],
   [RUTAS.lectores]: ['BIBLIOTECARIO'],
+  // Antes que /prestamos: puedeEntrar toma la primera coincidencia por prefijo.
+  [RUTAS.devolucion]: ['BIBLIOTECARIO'],
   // El Administrador consulta al lector (DNI completo) y lo desbloquea (RNF-02, RN-02).
   [RUTAS.prestamos]: ['BIBLIOTECARIO', 'ADMINISTRADOR'],
 }

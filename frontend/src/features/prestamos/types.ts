@@ -55,3 +55,22 @@ export function formatearFecha(fecha: string): string {
   const [anio, mes, dia] = fecha.split('-')
   return `${dia}/${mes}/${anio}`
 }
+
+/** Respuesta de GET /prestamos/activo (HU-005). El DNI llega enmascarado. */
+export interface PrestamoActivo {
+  id: string
+  estado: 'VIGENTE' | 'VENCIDO'
+  fechaPrestamo: string
+  fechaDevolucion: string
+  ejemplar: { codigo: string; titulo: string }
+  lector: { nombres: string; apellidos: string; dni: string }
+}
+
+/** Respuesta de PATCH /prestamos/:id/devolucion. */
+export interface DevolucionRegistrada {
+  id: string
+  estado: 'DEVUELTO'
+  fechaDevuelto: string
+  conAtraso: boolean
+  ejemplar: { codigo: string; titulo: string }
+}
